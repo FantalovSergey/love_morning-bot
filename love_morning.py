@@ -210,7 +210,7 @@ async def show_all_messages(message: Message):
         love_messages = await get_love_messages_from_file()
         if love_messages:
             await show_messages(love_messages, keyboards.delete_messages)
-    if message.chat.id == ARINA_ID:
+    elif message.chat.id == ARINA_ID:
         await message.answer('Вы делаете что-то незаконное🤔')
 
 
@@ -226,7 +226,7 @@ async def start_messages_deleting(message: Message, state: FSMContext):
             reply_markup=keyboards.cancel
         )
         await state.set_state(DeleteMessages.indexes)
-    if message.chat.id == ARINA_ID:
+    elif message.chat.id == ARINA_ID:
         await message.answer('Вы делаете что-то очень незаконное🤔🤔🤔')
 
 
@@ -262,14 +262,7 @@ async def delete_messages(message: Message, state: FSMContext):
 
 @dispatcher.message()
 async def receive_message(message: Message):
-    if message.chat.id == ARINA_ID:
-        await bot.forward_message(
-            chat_id=MY_ID,
-            from_chat_id=ARINA_ID,
-            message_id=message.message_id,
-        )
-        await message.answer('Сообщение отправлено☺️')
-    elif message.chat.id == MY_ID:
+    if message.chat.id == MY_ID:
         try:
             with open(FILENAME, 'a', encoding='utf-8') as file:
                 file.write(f'{message.text}\n')
@@ -282,6 +275,13 @@ async def receive_message(message: Message):
             await message.answer(
                 'Сохранено', reply_markup=keyboards.show_messages,
             )
+    elif message.chat.id == ARINA_ID:
+        await bot.forward_message(
+            chat_id=MY_ID,
+            from_chat_id=ARINA_ID,
+            message_id=message.message_id,
+        )
+        await message.answer('Сообщение отправлено☺️')
 
 
 async def main():
