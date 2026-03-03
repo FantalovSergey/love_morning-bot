@@ -1,0 +1,14 @@
+version: null
+meta:
+  environment: python
+  toolchain:
+    name: pip
+    version: "3.12"
+build:
+  requirementsPath: requirements.txt
+  useCache: false
+run:
+  persistenceMount: /data
+  command: touch messages.txt && python love_morning.py
+  containerPort: 80
+serviceType: compute

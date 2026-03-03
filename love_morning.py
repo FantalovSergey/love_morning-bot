@@ -5,14 +5,14 @@ from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from random import choice
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.exceptions import TelegramNetworkError, TelegramServerError
-from aiogram.filters import Command, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardMarkup
 from dotenv import load_dotenv
 
-from . import keyboards
+import keyboards
 from exceptions import UnexpectedError
 from fsms import DeleteMessages
 from utils import get_indexes
@@ -158,10 +158,10 @@ async def show_messages(
         symbol_count += len(love_message) + 4
         if symbol_count > TG_SYMBOL_LIMIT:
             symbol_count = 0
-            await bot.send_message(MY_ID, '\n'.join(chunk))
+            await bot.send_message(MY_ID, ''.join(chunk))
             chunk = []
         chunk.append(f'{index}. {love_message}')
-    await bot.send_message(MY_ID, '\n'.join(chunk), reply_markup=keyboard)
+    await bot.send_message(MY_ID, ''.join(chunk), reply_markup=keyboard)
 
 
 async def wish_good_morning():
@@ -234,6 +234,9 @@ async def start_messages_deleting(message: Message, state: FSMContext):
 async def delete_messages(message: Message, state: FSMContext):
     if message.text == keyboards.CANCEL_TEXT:
         await state.clear()
+        await message.answer(
+            'Удаление отменено', reply_markup=keyboards.show_messages
+        )
     else:
         try:
             indexes_for_deleting = get_indexes(message.text)
@@ -252,7 +255,8 @@ async def delete_messages(message: Message, state: FSMContext):
                             else undeleted_messages.append(love_message)
                         )
                     file.writelines(undeleted_messages)
-                await show_messages(deleted_messages, keyboards.after_deleting)
+                await message.answer('Удалены следующие сообщения:')
+                await show_messages(deleted_messages, keyboards.show_messages)
                 await state.clear()
 
 
@@ -270,9 +274,14 @@ async def receive_message(message: Message):
             with open(FILENAME, 'a', encoding='utf-8') as file:
                 file.write(f'{message.text}\n')
         except FileNotFoundError:
-            await message.answer('Файл с сообщениями не найден')
+            await message.answer(
+                'Файл с сообщениями не найден',
+                reply_markup=keyboards.show_messages,
+            )
         else:
-            await message.answer('Сохранено')
+            await message.answer(
+                'Сохранено', reply_markup=keyboards.show_messages,
+            )
 
 
 async def main():

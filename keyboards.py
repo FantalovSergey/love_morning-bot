@@ -24,11 +24,3 @@ cancel = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text=CANCEL_TEXT)]],
     resize_keyboard=True,
 )
-
-after_deleting = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text=SHOW_MESSAGES_TEXT)],
-        [KeyboardButton(text=DELETE_MESSAGES_TEXT)],
-    ],
-    resize_keyboard=True,
-)
