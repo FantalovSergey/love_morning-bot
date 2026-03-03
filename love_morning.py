@@ -28,7 +28,7 @@ FOR_UNKNOWN_USERS = (
     'передайте ей привет🖐️'
 )
 
-FILENAME = 'messages.txt'
+FILENAME = '/data/messages.txt'
 TG_SYMBOL_LIMIT = 4096
 
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
@@ -45,7 +45,7 @@ dispatcher = Dispatcher()
 is_sending_available = os.getenv('IS_SENDING_AVAILABLE') == 'True'
 
 format = '%(asctime)s %(levelname)s %(message)s'
-handler = RotatingFileHandler('logs.log', maxBytes=50000000, backupCount=5)
+handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
 handler.setFormatter(logging.Formatter(format))
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
