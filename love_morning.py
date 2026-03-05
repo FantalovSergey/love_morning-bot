@@ -28,7 +28,7 @@ FOR_UNKNOWN_USERS = (
 )
 
 FILENAME = '/data/messages.txt'
-TG_SYMBOL_LIMIT = 4096
+BOT_MESSAGE_SYMBOL_LIMIT = 1024
 
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
 SENDING_TIME = {
@@ -138,24 +138,24 @@ async def send_love_message():
         await safe_send_message(ARINA_ID, choice(love_messages))
 
 
-async def show_messages(
-    love_messages: list[str], keyboard: ReplyKeyboardMarkup
-):
+async def show_messages(messages: list[str], keyboard: ReplyKeyboardMarkup):
     """
     Отправка списка сообщений вместе с клавиатурой по моему запросу.
 
     Учитывается лимит символов Telegram для одного сообщения.
     """
-    chunk = []
-    symbol_count = 0
-    for index, love_message in enumerate(love_messages):
-        # индекс + точка + пробел + перенос строки в конце = 4
-        symbol_count += len(love_message) + 4
-        if symbol_count > TG_SYMBOL_LIMIT:
-            symbol_count = 0
-            await bot.send_message(MY_ID, ''.join(chunk))
-            chunk = []
-        chunk.append(f'{index}. {love_message}')
+    if messages:
+        chunk = []
+        symbol_count = 0
+        for index, message in enumerate(messages):
+            symbol_count += len(message)
+            if symbol_count > BOT_MESSAGE_SYMBOL_LIMIT:
+                symbol_count = 0
+                await bot.send_message(MY_ID, ''.join(chunk))
+                chunk = []
+            chunk.append(f'{index}. {message}')
+    else:
+        chunk = ['Нет сообщений для просмотра']
     await bot.send_message(MY_ID, ''.join(chunk), reply_markup=keyboard)
 
 
