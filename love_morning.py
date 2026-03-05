@@ -13,7 +13,6 @@ from aiogram.types import Message, ReplyKeyboardMarkup
 from dotenv import load_dotenv
 
 import keyboards
-from exceptions import UnexpectedError
 from fsms import DeleteMessages
 from utils import get_indexes
 
@@ -42,7 +41,6 @@ RETRY_PERIOD = 180
 
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher()
-is_sending_available = os.getenv('IS_SENDING_AVAILABLE') == 'True'
 
 format = '%(asctime)s %(levelname)s %(message)s'
 handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
@@ -78,8 +76,6 @@ async def safe_send_message(chat_id: int, message: str):
     Отправка сообщений по указанному id пользователя.
 
     Повторная отправка при ошибках подключения к Telegram.
-
-    Остановка бота при неожиданных ошибках.
     """
     while True:
         try:
@@ -88,12 +84,11 @@ async def safe_send_message(chat_id: int, message: str):
             logger.exception('Сбой при отправке сообщения в Telegram.')
             await asyncio.sleep(RETRY_PERIOD)
         except Exception as error:
-            unexpected_error = (
-                'Мы не знаем, что это такое, если бы мы знали, что это такое, '
-                f'мы не знаем, что это такое:\n{error}'
-            )
-            logger.exception(unexpected_error)
-            raise UnexpectedError(unexpected_error)
+            if 'chat not found' not in error:
+                logger.exception(
+                    'Мы не знаем, что это такое, если бы мы знали, '
+                    f'что это такое, мы не знаем, что это такое:\n{error}'
+                )
         else:
             if chat_id == ARINA_ID:
                 await bot.send_message(MY_ID, f'Отправлено:\n{message}')
@@ -172,14 +167,12 @@ async def wish_good_morning():
         # Если дельта отрицательная, свойство seconds вернёт количество секунд
         # до момента отправки, которая произойдёт на следующий день
         await asyncio.sleep(delta.seconds)
-        if is_sending_available:
-            await send_love_message()
+        await send_love_message()
         await asyncio.sleep(1)
 
 
 @dispatcher.message(Command("start"))
 async def start(message: Message):
-    global is_sending_available
     if message.chat.id == ARINA_ID:
         first_message = (
             'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
@@ -191,7 +184,6 @@ async def start(message: Message):
         await message.answer(
             first_message, reply_markup=keyboards.get_cuteness,
         )
-        is_sending_available = True
     elif message.chat.id == MY_ID:
         await message.answer('🖐️', reply_markup=keyboards.show_messages)
     else:
