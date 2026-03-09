@@ -203,7 +203,7 @@ async def show_all_messages(message: Message):
         if love_messages:
             await show_messages(love_messages, keyboards.delete_messages)
     elif message.chat.id == ARINA_ID:
-        await message.answer('Вы делаете что-то незаконное🤔')
+        await safe_send_message(ARINA_ID, 'Вы делаете что-то незаконное🤔')
 
 
 @dispatcher.message(F.text == keyboards.DELETE_MESSAGES_TEXT)
@@ -219,7 +219,9 @@ async def start_messages_deleting(message: Message, state: FSMContext):
         )
         await state.set_state(DeleteMessages.indexes)
     elif message.chat.id == ARINA_ID:
-        await message.answer('Вы делаете что-то очень незаконное🤔🤔🤔')
+        await safe_send_message(
+            ARINA_ID, 'Вы делаете что-то очень незаконное🤔🤔🤔'
+        )
 
 
 @dispatcher.message(DeleteMessages.indexes)
