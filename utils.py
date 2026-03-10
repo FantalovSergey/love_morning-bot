@@ -1,4 +1,5 @@
 def get_indexes(text: str) -> list[int]:
+    """Преобразование текста с диапазонами сообщений в список индексов."""
     index_ranges = text.split(', ')
     indexes = []
     for index_range in index_ranges:

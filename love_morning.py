@@ -52,9 +52,8 @@ logger.setLevel(logging.ERROR)
 
 def check_necessary_env_vars():
     """
-    Проверяет обязательные переменные окружения.
-
-    Бот будет остановлен при отсутствии.
+    Проверяет обязательные переменные окружения.\n
+    Бот будет остановлен при отсутствии любой из них.
     """
     env_vars = {
         'BOT_TOKEN': BOT_TOKEN,
@@ -73,8 +72,7 @@ def check_necessary_env_vars():
 
 async def safe_send_message(chat_id: int, message: str):
     """
-    Отправка сообщений по указанному id пользователя.
-
+    Отправка сообщений по указанному id пользователя.\n
     Повторная отправка при ошибках подключения к Telegram.
     """
     while True:
@@ -95,10 +93,9 @@ async def safe_send_message(chat_id: int, message: str):
             break
 
 
-async def get_love_messages_from_file() -> list[str] | None:
+async def get_messages_from_file() -> list[str] | None:
     """
-    Получения всех сообщений из файла.
-
+    Получения всех сообщений из файла.\n
     Логирование ошибок отсутствия самого файла или его содержимого.
     """
     file_error = None
@@ -120,11 +117,10 @@ async def get_love_messages_from_file() -> list[str] | None:
 
 async def send_love_message():
     """
-    Отправка сообщения Арине.
-
+    Отправка сообщения Арине.\n
     Если есть проблемы с файлом, бот извиняется.
     """
-    love_messages = await get_love_messages_from_file()
+    love_messages = await get_messages_from_file()
     if not love_messages:
         await safe_send_message(
             ARINA_ID,
@@ -140,8 +136,7 @@ async def send_love_message():
 
 async def show_messages(messages: list[str], keyboard: ReplyKeyboardMarkup):
     """
-    Отправка списка сообщений вместе с клавиатурой по моему запросу.
-
+    Отправка списка сообщений вместе с клавиатурой по моему запросу.\n
     Учитывается лимит символов Telegram для одного сообщения.
     """
     if messages:
@@ -173,6 +168,10 @@ async def wish_good_morning():
 
 @dispatcher.message(Command("start"))
 async def start(message: Message):
+    """
+    Ответ на команду /start.\n
+    Неизвестным пользователям отправляется соответствующее сообщение.
+    """
     if message.chat.id == ARINA_ID:
         first_message = (
             'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
@@ -192,14 +191,19 @@ async def start(message: Message):
 
 @dispatcher.message(F.text == keyboards.GET_CUTENESS_TEXT)
 async def send_cuteness_immediately(message: Message):
+    """Ответ на нажатие Ариной кнопки 'Получить милоту райт нау!!'"""
     if message.chat.id == ARINA_ID:
         await send_love_message()
 
 
 @dispatcher.message(F.text == keyboards.SHOW_MESSAGES_TEXT)
-async def show_all_messages(message: Message):
+async def show_all_love_messages(message: Message):
+    """
+    Ответ на нажатие кнопки 'Посмотреть сообщения'.\n
+    Мне – все сообщения из файла, Арине – предупреждение.
+    """
     if message.chat.id == MY_ID:
-        love_messages = await get_love_messages_from_file()
+        love_messages = await get_messages_from_file()
         if love_messages:
             await show_messages(love_messages, keyboards.delete_messages)
     elif message.chat.id == ARINA_ID:
@@ -207,7 +211,12 @@ async def show_all_messages(message: Message):
 
 
 @dispatcher.message(F.text == keyboards.DELETE_MESSAGES_TEXT)
-async def start_messages_deleting(message: Message, state: FSMContext):
+async def start_love_messages_deleting(message: Message, state: FSMContext):
+    """
+    Ответ на нажатие кнопки 'Удалить сообщения'.\n
+    Мне – возможность ввода индексов либо отмены удаления нажатием кнопки,
+    Арине – предупреждение.
+    """
     if message.chat.id == MY_ID:
         await state.clear()
         await message.answer(
@@ -225,7 +234,10 @@ async def start_messages_deleting(message: Message, state: FSMContext):
 
 
 @dispatcher.message(DeleteMessages.indexes)
-async def delete_messages(message: Message, state: FSMContext):
+async def delete_love_messages(message: Message, state: FSMContext):
+    """
+    Удаление сообщений из файла по указанным индексам или отмена удаления.
+    """
     if message.text == keyboards.CANCEL_TEXT:
         await state.clear()
         await message.answer(
@@ -237,17 +249,17 @@ async def delete_messages(message: Message, state: FSMContext):
         except ValueError:
             await message.answer('Проверьте правильность ввода')
         else:
-            love_messages = await get_love_messages_from_file()
-            if love_messages:
+            messages_from_file = await get_messages_from_file()
+            if messages_from_file:
+                undeleted_messages = []
+                deleted_messages = []
+                for index, message_from_file in enumerate(messages_from_file):
+                    (
+                        deleted_messages.append(message_from_file)
+                        if index in indexes_for_deleting
+                        else undeleted_messages.append(message_from_file)
+                    )
                 with open(FILENAME, 'w', encoding='utf-8') as file:
-                    undeleted_messages = []
-                    deleted_messages = []
-                    for index, love_message in enumerate(love_messages):
-                        (
-                            deleted_messages.append(love_message)
-                            if index in indexes_for_deleting
-                            else undeleted_messages.append(love_message)
-                        )
                     file.writelines(undeleted_messages)
                 await message.answer('Удалены следующие сообщения:')
                 await show_messages(deleted_messages, keyboards.show_messages)
@@ -256,6 +268,10 @@ async def delete_messages(message: Message, state: FSMContext):
 
 @dispatcher.message()
 async def receive_message(message: Message):
+    """Обработка прочих сообщений.\n
+    Моё сообщение сохраняется в файл как любовное,
+    сообщение Арины пересылается мне.
+    """
     if message.chat.id == MY_ID:
         try:
             with open(FILENAME, 'a', encoding='utf-8') as file:
