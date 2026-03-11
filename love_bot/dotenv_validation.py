@@ -1,13 +1,13 @@
 import os
-from typing import Dict
 
 from dotenv import load_dotenv
 
 
-def check_necessary_env_vars() -> Dict | None:
+def get_env_vars() -> tuple[str, int, int]:
     """
-    Возвращает словарь с обязательными переменными окружения.\n
-    Бросает ValueError при отсутствии любой из них.
+    Возвращает кортеж с обязательными переменными окружения.\n
+    Порядок следующий: BOT_TOKEN, ARINA_ID, MY_ID.
+    Бросает ValueError при отсутствии любой из них с сообщением об ошибке.
     """
     load_dotenv()
     env_vars = {
@@ -21,4 +21,4 @@ def check_necessary_env_vars() -> Dict | None:
             'Отсутствуют следующие обязательные переменные окружения: '
             f'"{', '.join(absent_env_vars)}". Бот остановлен.'
         )
-    return env_vars
+    return tuple(env_vars.values())

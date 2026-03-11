@@ -126,14 +126,14 @@ async def delete_love_messages(message: Message, state: FSMContext):
                 await love_messages.show_messages(
                     deleted_messages, keyboards.show_messages,
                 )
-                await state.clear()
+            await state.clear()
 
 
 @config.dispatcher.message()
 async def receive_message(message: Message):
     """Обработка прочих сообщений.\n
-    Моё сообщение сохраняется в файл как любовное,
-    сообщение Арины пересылается мне.
+    Моё сообщение сохраняется в файл как любовное.
+    Сообщение Арины пересылается мне.
     """
     if message.chat.id == config.MY_ID:
         try:

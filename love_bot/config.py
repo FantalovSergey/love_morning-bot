@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 
 from aiogram import Bot, Dispatcher
 
-from .dotenv_validation import check_necessary_env_vars
+from .dotenv_validation import get_env_vars
 
 format = '%(asctime)s %(levelname)s %(message)s'
 handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
@@ -14,7 +14,7 @@ logger.addHandler(handler)
 logger.setLevel(logging.ERROR)
 
 try:
-    BOT_TOKEN, ARINA_ID, MY_ID = check_necessary_env_vars().values()
+    BOT_TOKEN, ARINA_ID, MY_ID = get_env_vars()
 except ValueError as absent_env_vars_error:
     logger.critical(absent_env_vars_error)
     raise ValueError(absent_env_vars_error)
