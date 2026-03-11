@@ -126,7 +126,7 @@ async def delete_love_messages(message: Message, state: FSMContext):
                 await love_messages.show_messages(
                     deleted_messages, keyboards.show_messages,
                 )
-            await state.clear()
+                await state.clear()
 
 
 @config.dispatcher.message()
@@ -159,7 +159,9 @@ async def receive_message(message: Message):
 
 async def main():
     await asyncio.gather(
-        wish_good_morning(), config.dispatcher.start_polling(config.bot),
+        wish_good_morning(),
+        config.dispatcher.start_polling(config.bot),
+        safe_send_message(config.MY_ID, 'Бот запущен'),
     )
 
 
