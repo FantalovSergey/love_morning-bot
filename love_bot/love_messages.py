@@ -1,3 +1,4 @@
+from datetime import datetime
 from random import choice
 
 from aiogram.types import ReplyKeyboardMarkup
@@ -44,7 +45,15 @@ async def send_love_message():
             ),
         )
     else:
-        await safe_send_message(config.ARINA_ID, choice(love_messages))
+        love_message = choice(love_messages)
+        now = datetime.now(config.TZ)
+        for hour_range, hello_phrase in config.DAY_PARTS_EXCEPT_MORNING:
+            if now.hour in hour_range:
+                love_message = love_message.replace(
+                    'Доброе утро', hello_phrase,
+                )
+                break
+        await safe_send_message(config.ARINA_ID, love_message)
 
 
 async def show_messages(messages: list[str], keyboard: ReplyKeyboardMarkup):

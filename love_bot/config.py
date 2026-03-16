@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta, timezone
 from logging.handlers import RotatingFileHandler
+from typing import Iterable
 
 from aiogram import Bot, Dispatcher
 
@@ -31,6 +32,7 @@ FILEPATH = '/data/message_bank.txt'
 BOT_MESSAGE_SYMBOL_LIMIT = 1024
 
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
+
 SENDING_TIME = {
     'hour': 6,
     'minute': 0,
@@ -38,7 +40,15 @@ SENDING_TIME = {
     'microsecond': 0,
 }
 
-RETRY_PERIOD = 180
+DAY_PARTS_EXCEPT_MORNING: tuple[tuple[Iterable[int], str]] = (
+    (tuple(range(4)) + tuple(range(23, 24)), 'Спокойноной ночи'),
+    (range(12, 16), 'Добрый день'),
+    (range(16, 23), 'Добрый вечер'),
+)
+"""
+Содержит диапазоны часов, соответствующие времени суток,
+и приветсвенные фразы, например 'Добрый вечер'.
+"""
 
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher()
