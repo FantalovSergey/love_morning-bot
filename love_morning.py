@@ -6,9 +6,15 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from love_bot import config, keyboards, love_messages
-from love_bot.fsms import DeleteMessages
-from love_bot.utils import get_indexes, safe_send_message
+from love_bot import config, keyboards
+from love_bot.content import (
+    delete_content, get_content_from_file, send_love_message, show_content,
+    write_content,
+)
+from love_bot.fsms import (
+    DeleteDreams, DeleteLoveMessages, SendNoteForArina, WriteDream,
+)
+from love_bot.utils import safe_send_message
 
 
 async def wish_good_morning():
@@ -19,142 +25,220 @@ async def wish_good_morning():
         # Если дельта отрицательная, свойство seconds вернёт количество секунд
         # до момента отправки, которая произойдёт на следующий день
         await asyncio.sleep(delta.seconds)
-        await love_messages.send_love_message()
+        await send_love_message()
         await asyncio.sleep(1)
 
 
 @config.dispatcher.message(Command("start"))
-async def start(message: Message):
+async def start(message: Message, state: FSMContext):
     """
     Ответ на команду /start.\n
-    Неизвестным пользователям отправляется соответствующее сообщение.
+    Можно использовать для сброса FSM.
     """
-    if message.chat.id == config.ARINA_ID:
-        first_message = (
-            'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
-            'Если хочешь этого прямо сейчас, жми на кнопочку. Я глупенький, '
-            'поэтому не смогу понимать твои сообщения и буду пересылать их '
-            'моему создателю. Там, конечно, тоже не гений сидит, '
-            'но у него больше шансов разобраться✨'
-        )
-        await message.answer(
-            first_message, reply_markup=keyboards.get_cuteness,
-        )
-    elif message.chat.id == config.MY_ID:
-        await message.answer('🖐️', reply_markup=keyboards.show_messages)
-    else:
-        await message.answer(config.FOR_UNKNOWN_USERS)
+    await state.clear()
+    if message.chat.id == config.MY_ID:
+        await message.answer('🖐️', reply_markup=keyboards.my_keyboard)
+        return
+    first_message = (
+        'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
+        'Если хочешь этого прямо сейчас, жми на кнопочку. Я глупенький, '
+        'поэтому не смогу понимать твои сообщения и буду пересылать их '
+        'моему создателю. Там, конечно, тоже не гений сидит, '
+        'но у него больше шансов разобраться✨'
+    )
+    await safe_send_message(
+        config.ARINA_ID,
+        first_message,
+        keyboards.Arina_keyboard,
+        request_message_id=message.message_id,
+    )
 
 
-@config.dispatcher.message(F.text == keyboards.GET_CUTENESS_TEXT)
+@config.dispatcher.message(F.text == keyboards.CANCEL)
+async def cancel(message: Message, state: FSMContext):
+    """Отмена ранее выбранного действия."""
+    await safe_send_message(
+        message.chat.id,
+        'Есть "Отмена"🫡',
+        (
+            keyboards.Arina_keyboard if message.chat.id == config.ARINA_ID else
+            keyboards.my_keyboard
+        ),
+        request_message_id=message.message_id,
+    )
+    await state.clear()
+
+
+@config.dispatcher.message(WriteDream.dream)
+async def write_dream(message: Message, state: FSMContext):
+    """
+    Получение сна из сообщения и запись в файл.\n
+    Присутствует ограничение количества символов.
+    """
+    symbol_exceeding = len(message.text) - config.TO_BOT_MESSAGE_SYMBOL_LIMIT
+    if symbol_exceeding > 0:
+        symbol_limit_warning = (
+            'Как тут много всего🤯🤯🤯\nЯ могу запомнить сон, в котором максимум '
+            f'{config.TO_BOT_MESSAGE_SYMBOL_LIMIT} символов🥺\n'
+            f'Сократи, пожалуйста, свой сон на {symbol_exceeding} символов🙏'
+        )
+        await safe_send_message(
+            config.ARINA_ID,
+            symbol_limit_warning,
+            request_message_id=message.message_id,
+        )
+        return
+    await write_content(
+        message, config.DREAMS_FILEPATH, keyboards.Arina_keyboard,
+    )
+    await state.clear()
+
+
+@config.dispatcher.message(DeleteLoveMessages.indexes)
+async def delete_love_messages(message: Message, state: FSMContext):
+    """
+    Удаление любовных сообщений из файла по указанным индексам.
+    """
+    await delete_content(
+        message, state, config.LOVE_MESSAGES_FILEPATH, keyboards.my_keyboard,
+    )
+
+
+@config.dispatcher.message(DeleteDreams.indexes)
+async def delete_dreams(message: Message, state: FSMContext):
+    """
+    Удаление снов из файла по указанным индексам.
+    """
+    await delete_content(
+        message, state, config.DREAMS_FILEPATH, keyboards.Arina_keyboard,
+    )
+
+
+@config.dispatcher.message(SendNoteForArina.note)
+async def write_note_for_Arina(message: Message, state: FSMContext):
+    """Отправка кастомного уведомления из сообщения Арине."""
+    await safe_send_message(config.ARINA_ID, message.text)
+    await message.answer('✅', reply_markup=keyboards.my_keyboard)
+    await state.clear()
+
+
+@config.dispatcher.message(
+    F.text == keyboards.GET_CUTENESS, F.chat.id == config.ARINA_ID,
+)
 async def send_cuteness_immediately(message: Message):
     """Ответ на нажатие Ариной кнопки 'Получить милоту райт нау!!'"""
-    if message.chat.id == config.ARINA_ID:
-        await love_messages.send_love_message()
+    await send_love_message(request_message_id=message.message_id)
 
 
-@config.dispatcher.message(F.text == keyboards.SHOW_MESSAGES_TEXT)
+@config.dispatcher.message(
+    F.text == keyboards.WRITE_DREAM, F.chat.id == config.ARINA_ID,
+)
+async def start_dream_writing(message: Message, state: FSMContext):
+    """Ответ на нажатие Ариной кнопки 'Записать сон📝'."""
+    await safe_send_message(
+        config.ARINA_ID,
+        'Напишите, каким сладеньким сном Вы хотите поделиться😋',
+        keyboards.cancel,
+        request_message_id=message.message_id,
+    )
+    await state.set_state(WriteDream.dream)
+
+
+@config.dispatcher.message(F.text == keyboards.SHOW_MESSAGES)
 async def show_all_love_messages(message: Message):
     """
     Ответ на нажатие кнопки 'Посмотреть сообщения'.\n
-    Мне – все сообщения из файла, Арине – предупреждение.
+    Мне – все любовные сообщения из файла, Арине – предупреждение.
     """
-    if message.chat.id == config.MY_ID:
-        messages = await love_messages.get_messages_from_file()
-        if messages:
-            await love_messages.show_messages(
-                messages, keyboards.delete_messages,
-            )
-    elif message.chat.id == config.ARINA_ID:
+    if message.chat.id == config.ARINA_ID:
         await safe_send_message(
-            config.ARINA_ID, 'Вы делаете что-то незаконное🤔',
+            config.ARINA_ID,
+            'Вы делаете что-то незаконное🤔',
+            request_message_id=message.message_id,
         )
+        return
+    await show_content(
+        message, get_content_from_file(config.LOVE_MESSAGES_FILEPATH),
+    )
 
 
-@config.dispatcher.message(F.text == keyboards.DELETE_MESSAGES_TEXT)
+@config.dispatcher.message(F.text == keyboards.SHOW_DREAMS)
+async def show_all_dreams(message: Message):
+    """Ответ на нажатие кнопки 'Посмотреть все сны📝'."""
+    await show_content(message, get_content_from_file(config.DREAMS_FILEPATH))
+
+
+@config.dispatcher.message(F.text == keyboards.DELETE_MESSAGES)
 async def start_love_messages_deleting(message: Message, state: FSMContext):
     """
     Ответ на нажатие кнопки 'Удалить сообщения'.\n
-    Мне – возможность ввода индексов либо отмены удаления нажатием кнопки,
-    Арине – предупреждение.
+    Мне – возможность ввода индексов, Арине – предупреждение.
     """
-    if message.chat.id == config.MY_ID:
-        await state.clear()
-        await message.answer(
-            (
-                'Введите диапазоны сообщений через запятую\n'
-                'Пример: 1, 17-19, 23-24'
-            ),
-            reply_markup=keyboards.cancel,
-        )
-        await state.set_state(DeleteMessages.indexes)
-    elif message.chat.id == config.ARINA_ID:
+    if message.chat.id == config.ARINA_ID:
         await safe_send_message(
-            config.ARINA_ID, 'Вы делаете что-то очень незаконное🤔🤔🤔',
+            config.ARINA_ID,
+            'Вы делаете что-то очень незаконное🤔🤔🤔',
+            request_message_id=message.message_id,
         )
+        return
+    await show_content(
+        message, get_content_from_file(config.LOVE_MESSAGES_FILEPATH),
+    )
+    await message.answer(
+        (
+            'Введите диапазоны сообщений через запятую\n'
+            'Пример: 1, 17-19, 23-24'
+        ),
+        reply_markup=keyboards.cancel,
+    )
+    await state.set_state(DeleteLoveMessages.indexes)
 
 
-@config.dispatcher.message(DeleteMessages.indexes)
-async def delete_love_messages(message: Message, state: FSMContext):
+@config.dispatcher.message(
+    F.text == keyboards.DELETE_DREAMES, F.chat.id == config.ARINA_ID,
+)
+async def start_dreams_deleting(message: Message, state: FSMContext):
     """
-    Удаление сообщений из файла по указанным индексам или отмена удаления.
+    Ответ на нажатие Ариной кнопки 'Удалить нехорошие сны🗑️'.\n
+    Появляется возможность ввода индексов.
     """
-    if message.text == keyboards.CANCEL_TEXT:
-        await state.clear()
-        await message.answer(
-            'Удаление отменено', reply_markup=keyboards.show_messages,
-        )
-    else:
-        try:
-            indexes_for_deleting = get_indexes(message.text)
-        except ValueError:
-            await message.answer('Проверьте правильность ввода')
-        else:
-            messages_from_file = await love_messages.get_messages_from_file()
-            if messages_from_file:
-                undeleted_messages = []
-                deleted_messages = []
-                for index, message_from_file in enumerate(messages_from_file):
-                    (
-                        deleted_messages.append(message_from_file)
-                        if index in indexes_for_deleting
-                        else undeleted_messages.append(message_from_file)
-                    )
-                with open(config.FILEPATH, 'w', encoding='utf-8') as file:
-                    file.writelines(undeleted_messages)
-                await message.answer('Удалены следующие сообщения:')
-                await love_messages.show_messages(
-                    deleted_messages, keyboards.show_messages,
-                )
-                await state.clear()
+    await show_content(
+        message, get_content_from_file(config.DREAMS_FILEPATH),
+    )
+    await safe_send_message(
+        config.ARINA_ID,
+        (
+            'Фто тут нувно удалить? Мне нувны номера\n'
+            'Например: 1, 17-19, 23-24 кнопочка "Отправить"⏎'
+        ),
+        keyboards.cancel,
+    )
+    await state.set_state(DeleteDreams.indexes)
+
+
+@config.dispatcher.message(
+    F.text == keyboards.WRITE_AS_BOT, F.chat.id == config.MY_ID,
+)
+async def start_writing_as_bot(message: Message, state: FSMContext):
+    """Ответ на нажатие мною кнопки 'Написать от лица бота'."""
+    await message.answer('Можно вещать', reply_markup=keyboards.cancel)
+    await state.set_state(SendNoteForArina.note)
 
 
 @config.dispatcher.message()
-async def receive_message(message: Message):
+async def handle_message(message: Message):
     """Обработка прочих сообщений.\n
     Моё сообщение сохраняется в файл как любовное.
     Сообщение Арины пересылается мне.
     """
-    if message.chat.id == config.MY_ID:
-        try:
-            with open(config.FILEPATH, 'a', encoding='utf-8') as file:
-                file.write(f'{message.text}\n')
-        except FileNotFoundError:
-            await message.answer(
-                'Файл с сообщениями не найден',
-                reply_markup=keyboards.show_messages,
-            )
-        else:
-            await message.answer(
-                'Сохранено', reply_markup=keyboards.show_messages,
-            )
-    elif message.chat.id == config.ARINA_ID:
-        await config.bot.forward_message(
-            chat_id=config.MY_ID,
-            from_chat_id=config.ARINA_ID,
-            message_id=message.message_id,
+    if message.chat.id == config.ARINA_ID:
+        await safe_send_message(
+            config.ARINA_ID,
+            'Сообщение отправлено☺️',
+            request_message_id=message.message_id,
         )
-        await message.answer('Сообщение отправлено☺️')
+        return
+    await write_content(message, config.LOVE_MESSAGES_FILEPATH)
 
 
 async def main():

@@ -6,6 +6,7 @@ from typing import Iterable
 from aiogram import Bot, Dispatcher
 
 from .dotenv_validation import get_env_vars
+from .middlewares import AccessMiddleware
 
 format = '%(asctime)s %(levelname)s %(message)s'
 handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
@@ -18,18 +19,13 @@ try:
     BOT_TOKEN, ARINA_ID, MY_ID = get_env_vars()
 except ValueError as absent_env_vars_error:
     logger.critical(absent_env_vars_error)
-    raise ValueError(absent_env_vars_error)
+    raise absent_env_vars_error
 
+LOVE_MESSAGES_FILEPATH = '/data/love_messages.txt'
+DREAMS_FILEPATH = '/data/dreams.txt'
 
-FOR_UNKNOWN_USERS = (
-    'Доброго времени суток! Этот бот предназначен исключительно '
-    'для одного человека, для Арины Атаманюк. Если Вы её знаете, '
-    'передайте ей привет🖐️'
-)
-
-FILEPATH = '/data/message_bank.txt'
-
-BOT_MESSAGE_SYMBOL_LIMIT = 1024
+FROM_BOT_MESSAGE_SYMBOL_LIMIT = 3072
+TO_BOT_MESSAGE_SYMBOL_LIMIT = 3000
 
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
 
@@ -52,3 +48,4 @@ DAY_PARTS_EXCEPT_MORNING: tuple[tuple[Iterable[int], str]] = (
 
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher()
+dispatcher.update.outer_middleware(AccessMiddleware((ARINA_ID, MY_ID)))

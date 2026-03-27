@@ -18,7 +18,7 @@ def get_env_vars() -> tuple[str, int, int]:
     absent_env_vars = [key for key, var in env_vars.items() if not var]
     if absent_env_vars:
         raise ValueError(
-            'Отсутствуют следующие обязательные переменные окружения: '
-            f'"{', '.join(absent_env_vars)}". Бот остановлен.'
+            'Отсутствуют следующие обязательные переменные окружения:\n'
+            f'{', '.join(absent_env_vars)}. Бот не запущен.'
         )
     return tuple(env_vars.values())

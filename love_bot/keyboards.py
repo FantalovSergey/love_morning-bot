@@ -1,26 +1,30 @@
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton as Button, ReplyKeyboardMarkup
 
-GET_CUTENESS_TEXT = 'Получить милоту райт нау!!'
-SHOW_MESSAGES_TEXT = 'Посмотреть сообщения'
-DELETE_MESSAGES_TEXT = 'Удалить сообщения'
-CANCEL_TEXT = 'Отмена'
+GET_CUTENESS = 'Получить милоту райт нау!!'
+WRITE_DREAM = 'Записать сон📝'
+SHOW_MESSAGES = 'Посмотреть сообщения'
+SHOW_DREAMS = 'Посмотреть все сны😴'
+DELETE_MESSAGES = 'Удалить сообщения'
+DELETE_DREAMES = 'Удалить нехорошие сны🗑️'
+WRITE_AS_BOT = 'Написать от лица бота'
+CANCEL = 'Отмена❌'
 
-get_cuteness = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=GET_CUTENESS_TEXT)]],
+Arina_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [Button(text=GET_CUTENESS), Button(text=SHOW_DREAMS)],
+        [Button(text=WRITE_DREAM), Button(text=DELETE_DREAMES)],
+    ],
     resize_keyboard=True,
 )
 
-show_messages = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=SHOW_MESSAGES_TEXT)]],
-    resize_keyboard=True,
-)
-
-delete_messages = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=DELETE_MESSAGES_TEXT)]],
+my_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [Button(text=SHOW_MESSAGES), Button(text=SHOW_DREAMS)],
+        [Button(text=DELETE_MESSAGES), Button(text=WRITE_AS_BOT)],
+    ],
     resize_keyboard=True,
 )
 
 cancel = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=CANCEL_TEXT)]],
-    resize_keyboard=True,
+    keyboard=[[Button(text=CANCEL)]], resize_keyboard=True,
 )
