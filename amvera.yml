@@ -9,6 +9,6 @@ build:
   useCache: false
 run:
   persistenceMount: /data
-  command: touch /data/message_bank.txt /data/dreams.txt && python love_morning.py
+  command: python love_morning.py
   containerPort: 80
 serviceType: compute
