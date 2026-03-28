@@ -21,21 +21,20 @@ except ValueError as absent_env_vars_error:
     logger.critical(absent_env_vars_error)
     raise absent_env_vars_error
 
+bot = Bot(BOT_TOKEN)
+dispatcher = Dispatcher()
+dispatcher.update.outer_middleware(AccessMiddleware((ARINA_ID, MY_ID)))
+
 LOVE_MESSAGES_FILEPATH = '/data/love_messages.txt'
 DREAMS_FILEPATH = '/data/dreams.txt'
 
-FROM_BOT_MESSAGE_SYMBOL_LIMIT = 3072
-TO_BOT_MESSAGE_SYMBOL_LIMIT = 3000
-
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
-
 SENDING_TIME = {
     'hour': 6,
     'minute': 0,
     'second': 0,
     'microsecond': 0,
 }
-
 DAY_PARTS_EXCEPT_MORNING: tuple[tuple[Iterable[int], str]] = (
     (tuple(range(4)) + tuple(range(23, 24)), 'Спокойноной ночи'),
     (range(12, 16), 'Добрый день'),
@@ -46,6 +45,15 @@ DAY_PARTS_EXCEPT_MORNING: tuple[tuple[Iterable[int], str]] = (
 и приветсвенные фразы, например 'Добрый вечер'.
 """
 
-bot = Bot(BOT_TOKEN)
-dispatcher = Dispatcher()
-dispatcher.update.outer_middleware(AccessMiddleware((ARINA_ID, MY_ID)))
+START_MESSAGE = (
+    'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
+    'Если хочешь этого прямо сейчас, жми на левую верхнюю кнопочку. '
+    'Я глупенький, поэтому не смогу понимать твои сообщения '
+    'и буду пересылать их моему создателю. Там, конечно, тоже не гений сидит, '
+    'но у него больше шансов разобраться✨ Также ты можешь делиться с нами '
+    'своими снами, мы будем очень рады🤗 В любой момент ты можешь '
+    'посмотреть все сны или удалить те, которые захочешь🙌'
+)
+
+FROM_BOT_MESSAGE_SYMBOL_LIMIT = 3072
+TO_BOT_MESSAGE_SYMBOL_LIMIT = 3000

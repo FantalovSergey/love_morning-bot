@@ -39,16 +39,9 @@ async def start(message: Message, state: FSMContext):
     if message.chat.id == config.MY_ID:
         await message.answer('🖐️', reply_markup=keyboards.my_keyboard)
         return
-    first_message = (
-        'Приветище! Каждое утро я буду присылать тебе что-нибудь милое😊. '
-        'Если хочешь этого прямо сейчас, жми на кнопочку. Я глупенький, '
-        'поэтому не смогу понимать твои сообщения и буду пересылать их '
-        'моему создателю. Там, конечно, тоже не гений сидит, '
-        'но у него больше шансов разобраться✨'
-    )
     await safe_send_message(
         config.ARINA_ID,
-        first_message,
+        config.START_MESSAGE,
         keyboards.Arina_keyboard,
         request_message_id=message.message_id,
     )
