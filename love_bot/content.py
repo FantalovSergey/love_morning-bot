@@ -28,7 +28,7 @@ def get_content_from_file(filepath: str) -> list[str]:
 
 async def send_love_message(request_message_id: int | None = None):
     """
-    Отправка сообщения Арине.\n
+    Отправка любовного сообщения Арине.\n
     Если есть проблемы с файлом, бот извиняется.
     """
     love_messages = get_content_from_file(config.LOVE_MESSAGES_FILEPATH)
@@ -59,7 +59,7 @@ async def write_content(
     filepath: str,
     keyboard: ReplyKeyboardMarkup | None = None,
 ):
-    """Запись любовных сообщений и снов в файлы."""
+    """Запись любовных сообщений или снов в файлы."""
     with open(filepath, 'a', encoding='utf-8') as file:
         file.writelines((f'{request.text.replace('\n', ' ')}\n',))
     await safe_send_message(
@@ -69,9 +69,10 @@ async def write_content(
 
 async def show_content(request: Message, content: list[str]):
     """
-    Отправляет любовные сообщения или сны в л/с по запросу.\n
+    Отправка любовных сообщений или снов в л/с по запросу.\n
     Учитывается лимит символов Telegram для одного сообщения.
     Содержимое (любовные сообщения или сны) пронумеровано.
+    Если контент запрашивает Арина, запрос пересылается мне сразу и 1 раз.
     """
     if request.chat.id == config.ARINA_ID:
         await config.bot.forward_message(
@@ -115,8 +116,8 @@ async def delete_content(
     for index, line in enumerate(get_content_from_file(filepath), start=1):
         (
             deleted_content.append(line)
-            if index in indexes_for_deleting
-            else undeleted_content.append(line)
+            if index in indexes_for_deleting else
+            undeleted_content.append(line)
         )
     with open(filepath, 'w', encoding='utf-8') as file:
         file.writelines(undeleted_content)

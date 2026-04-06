@@ -157,7 +157,7 @@ async def show_all_love_messages(message: Message):
 
 @config.dispatcher.message(F.text == keyboards.SHOW_DREAMS)
 async def show_all_dreams(message: Message):
-    """Ответ на нажатие кнопки 'Посмотреть все сны📝'."""
+    """Ответ на нажатие кнопки 'Посмотреть все сны😴'."""
     await show_content(message, get_content_from_file(config.DREAMS_FILEPATH))
 
 
