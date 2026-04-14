@@ -1,7 +1,6 @@
 import pytest
 
-from love_bot.utils import get_indexes
-from love_bot.utils import safe_send_message
+from love_bot.utils import get_indexes, safe_send_message
 
 
 def test_single_indexes():

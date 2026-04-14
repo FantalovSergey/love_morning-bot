@@ -1,6 +1,7 @@
 import pytest
-from love_bot.middlewares import AccessMiddleware
 from unittest.mock import AsyncMock, MagicMock
+
+from love_bot.middlewares import AccessMiddleware
 
 
 @pytest.mark.asyncio

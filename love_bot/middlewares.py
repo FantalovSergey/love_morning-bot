@@ -6,7 +6,7 @@ from aiogram.types import TelegramObject
 
 class AccessMiddleware(BaseMiddleware):
     """Ограничение доступа неизвестных пользователей."""
-    def __init__(self, allowed_users: tuple[int]):
+    def __init__(self, *allowed_users: int):
         super().__init__()
         self.allowed_users = allowed_users
 

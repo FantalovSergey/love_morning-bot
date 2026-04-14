@@ -10,7 +10,7 @@ def mock_bot(mocker):
 
 
 @pytest.fixture
-def fake_message():
+def message_mock():
     msg = MagicMock()
     msg.text = "test"
     msg.message_id = 1
@@ -20,7 +20,7 @@ def fake_message():
 
 
 @pytest.fixture
-def fake_state():
+def state_mock():
     state = AsyncMock()
     state.clear = AsyncMock()
     state.set_state = AsyncMock()

@@ -23,7 +23,7 @@ except ValueError as absent_env_vars_error:
 
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher()
-dispatcher.update.outer_middleware(AccessMiddleware((ARINA_ID, MY_ID)))
+dispatcher.update.outer_middleware(AccessMiddleware(ARINA_ID, MY_ID))
 
 LOVE_MESSAGES_FILEPATH = '/data/love_messages.txt'
 DREAMS_FILEPATH = '/data/dreams.txt'

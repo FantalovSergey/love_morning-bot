@@ -1,4 +1,5 @@
 """Работа с любовными сообщениями и снами в распоряжении бота."""
+import asyncio
 from datetime import datetime
 from random import choice
 
@@ -7,6 +8,18 @@ from aiogram.fsm.context import FSMContext
 
 from . import config
 from .utils import get_indexes, safe_send_message
+
+
+async def wish_good_morning():
+    """Пожелание доброго утра каждый день в определённое время."""
+    while True:
+        now = datetime.now(config.TZ)
+        delta = now.replace(**config.SENDING_TIME) - now
+        # Если дельта отрицательная, свойство seconds вернёт количество секунд
+        # до момента отправки, которая произойдёт на следующий день
+        await asyncio.sleep(delta.seconds)
+        await send_love_message()
+        await asyncio.sleep(1)
 
 
 def get_content_from_file(filepath: str) -> list[str]:
