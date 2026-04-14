@@ -115,8 +115,7 @@ async def delete_content(
     deleted_content = []
     for index, line in enumerate(get_content_from_file(filepath), start=1):
         (
-            deleted_content.append(line)
-            if index in indexes_for_deleting else
+            deleted_content.append(line) if index in indexes_for_deleting else
             undeleted_content.append(line)
         )
     with open(filepath, 'w', encoding='utf-8') as file:
