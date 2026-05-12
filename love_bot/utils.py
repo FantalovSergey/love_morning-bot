@@ -9,13 +9,14 @@ async def safe_send_message(
     message: str,
     keyboard: ReplyKeyboardMarkup | None = None,
     request_message_id: int | None = None,
-):
+) -> int:
     """
     Отправка сообщений по указанному id пользователя.\n
     Логирование исключений; 'chat not found' не обрабатывается,
     т.к. бот запускается раньше, чем ссылку на него получает Арина.
     Пересылка мне сообщения бота, отправленного Арине,
     и исходного сообщения Арины при наличии соответствующего аргумента.
+    Возвращает id отправленного сообщения.
     """
     try:
         sent_message = await config.bot.send_message(
@@ -42,6 +43,7 @@ async def safe_send_message(
                 from_chat_id=config.ARINA_ID,
                 message_id=sent_message.message_id,
             )
+        return sent_message.message_id
 
 
 def get_indexes(text: str) -> list[int]:

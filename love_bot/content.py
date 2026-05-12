@@ -82,7 +82,7 @@ async def write_content(
 
 async def show_content(request: Message, content: list[str]):
     """
-    Отправка любовных сообщений или снов в л/с по запросу.\n
+    Отправка исчезающих любовных сообщений или снов в л/с по запросу.\n
     Учитывается лимит символов Telegram для одного сообщения.
     Содержимое (любовные сообщения или сны) пронумеровано.
     Если контент запрашивает Арина, запрос пересылается мне сразу и 1 раз.
@@ -93,19 +93,31 @@ async def show_content(request: Message, content: list[str]):
             from_chat_id=config.ARINA_ID,
             message_id=request.message_id,
         )
+    messages = []
     if not content:
         chunk = ['Пуфто, ничего нет🙃']
     else:
         chunk = []
         symbol_count = 0
         for index, line in enumerate(content, start=1):
-            symbol_count += len(line)
-            if symbol_count > config.FROM_BOT_MESSAGE_SYMBOL_LIMIT:
-                symbol_count = 0
-                await safe_send_message(request.chat.id, ''.join(chunk))
+            line_length = len(line)
+            if symbol_count + line_length > (
+                config.FROM_BOT_MESSAGE_SYMBOL_LIMIT
+            ):
+                messages.append(
+                    await safe_send_message(request.chat.id, ''.join(chunk))
+                )
                 chunk = []
+                symbol_count = 0
             chunk.append(f'{index}. {line}')
-    await safe_send_message(request.chat.id, ''.join(chunk))
+            symbol_count += line_length
+    messages.append(await safe_send_message(request.chat.id, ''.join(chunk)))
+    await asyncio.sleep(config.CONTENT_SHOWING_PERIOD)
+    await config.bot.delete_messages(request.chat.id, messages)
+    await safe_send_message(
+        request.chat.id,
+        'Я показал, а потом удалив, штобы никто не подсмотрел🐻',
+    )
 
 
 async def delete_content(
