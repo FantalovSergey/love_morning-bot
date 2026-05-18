@@ -1,29 +1,42 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
+from love_bot.handlers.basic import cancel, start
 from love_bot import config, keyboards
-from love_bot.handlers.basic import start, cancel
 
 
 @pytest.mark.asyncio
-async def test_start_for_me(message_mock, state_mock):
-    message_mock.chat.id = config.MY_ID
-    await start(message_mock, state_mock)
-    message_mock.answer.assert_called_once_with(
-        '🖐️', reply_markup=keyboards.my_keyboard
+async def test_start_for_owner(message, state):
+    message.chat.id = config.MY_ID
+
+    await start(message, state)
+
+    state.clear.assert_awaited_once()
+
+    message.answer.assert_awaited_once_with(
+        "🖐️",
+        reply_markup=keyboards.my_keyboard,
     )
-    state_mock.clear.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_start_for_Arina(message_mock, state_mock, mocker):
-    mock_send = mocker.patch("love_bot.handlers.basic.safe_send_message")
-    await start(message_mock, state_mock)
-    mock_send.assert_called_once()
+@patch("love_bot.handlers.basic.safe_send_message", new_callable=AsyncMock)
+async def test_start_for_Arina(mock_send, message, state):
+    message.chat.id = config.ARINA_ID
+
+    await start(message, state)
+
+    mock_send.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_cancel(message_mock, state_mock, mocker):
-    mock_send = mocker.patch("love_bot.handlers.basic.safe_send_message")
-    await cancel(message_mock, state_mock)
-    mock_send.assert_called_once()
-    state_mock.clear.assert_called_once()
+@patch("love_bot.handlers.basic.safe_send_message", new_callable=AsyncMock)
+async def test_cancel(mock_send, message, state):
+    message.chat.id = config.MY_ID
+
+    await cancel(message, state)
+
+    state.clear.assert_awaited_once()
+
+    mock_send.assert_awaited_once()

@@ -1,21 +1,60 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
+from love_bot.handlers.fsm import (
+    delete_dreams,
+    delete_love_messages,
+    write_dream,
+    write_note_for_Arina,
+)
 from love_bot import config
-from love_bot.handlers.fsm import write_dream
 
 
 @pytest.mark.asyncio
-async def test_write_dream_too_long(message_mock, state_mock, mocker):
-    message_mock.text = "x" * (config.TO_BOT_MESSAGE_SYMBOL_LIMIT + 10)
-    mock_send = mocker.patch("love_bot.handlers.fsm.safe_send_message")
-    await write_dream(message_mock, state_mock)
-    mock_send.assert_called_once()
-    state_mock.clear.assert_not_called()
+@patch("love_bot.handlers.fsm.write_content", new_callable=AsyncMock)
+async def test_write_dream_success(mock_write, message, state):
+    message.text = "short dream"
+
+    await write_dream(message, state)
+
+    state.clear.assert_awaited_once()
+    mock_write.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_write_dream_success(message_mock, state_mock, mocker):
-    mock_write = mocker.patch("love_bot.handlers.fsm.write_content")
-    await write_dream(message_mock, state_mock)
-    mock_write.assert_called_once()
-    state_mock.clear.assert_called_once()
+@patch("love_bot.handlers.fsm.safe_send_message", new_callable=AsyncMock)
+async def test_write_dream_too_long(mock_send, message, state):
+    message.text = "a" * (config.TO_BOT_MESSAGE_SYMBOL_LIMIT + 1)
+
+    await write_dream(message, state)
+
+    mock_send.assert_awaited_once()
+    state.clear.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@patch("love_bot.handlers.fsm.delete_content", new_callable=AsyncMock)
+async def test_delete_love_messages(mock_delete, message, state):
+    await delete_love_messages(message, state)
+
+    mock_delete.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@patch("love_bot.handlers.fsm.delete_content", new_callable=AsyncMock)
+async def test_delete_dreams(mock_delete, message, state):
+    await delete_dreams(message, state)
+
+    mock_delete.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@patch("love_bot.handlers.fsm.safe_send_message", new_callable=AsyncMock)
+async def test_write_note_for_Arina(mock_send, message, state):
+    await write_note_for_Arina(message, state)
+
+    state.clear.assert_awaited_once()
+
+    mock_send.assert_awaited_once()
+    message.answer.assert_awaited_once()

@@ -1,5 +1,7 @@
+import asyncio
+
 from aiogram.exceptions import TelegramNetworkError, TelegramServerError
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import Message, ReplyKeyboardMarkup
 
 from . import config
 
@@ -15,7 +17,7 @@ async def safe_send_message(
     Логирование исключений; 'chat not found' не обрабатывается,
     т.к. бот запускается раньше, чем ссылку на него получает Арина.
     Пересылка мне сообщения бота, отправленного Арине,
-    и исходного сообщения Арины при наличии соответствующего аргумента.
+    и исходного сообщения Арины при наличии соответствующего аргумента.\n
     Возвращает id отправленного сообщения.
     """
     try:
@@ -44,6 +46,20 @@ async def safe_send_message(
                 message_id=sent_message.message_id,
             )
         return sent_message.message_id
+
+
+async def delete_messages_after_showing_content(
+    chat_id: int, messages: list[Message],
+):
+    """Удаление сообщений с контентом через некоторое время."""
+    await asyncio.sleep(config.CONTENT_SHOWING_PERIOD)
+    if len(messages) > 1:
+        await config.bot.delete_messages(chat_id, messages[1:])
+    await config.bot.edit_message_text(
+        'Я показал, а потом удалив, штобы никто не подсмотрел🐻',
+        chat_id=chat_id,
+        message_id=messages[0],
+    )
 
 
 def get_indexes(text: str) -> list[int]:

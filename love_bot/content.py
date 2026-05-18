@@ -74,18 +74,19 @@ async def write_content(
 ):
     """Запись любовных сообщений или снов в файлы."""
     with open(filepath, 'a', encoding='utf-8') as file:
-        file.writelines((f'{request.text.replace('\n', ' ')}\n',))
+        file.writelines((f"{request.text.replace('\n', ' ')}\n",))
     await safe_send_message(
         request.chat.id, 'Сохранено☺️', keyboard, request.message_id,
     )
 
 
-async def show_content(request: Message, content: list[str]):
+async def show_content(request: Message, content: list[str]) -> list[Message]:
     """
     Отправка исчезающих любовных сообщений или снов в л/с по запросу.\n
     Учитывается лимит символов Telegram для одного сообщения.
     Содержимое (любовные сообщения или сны) пронумеровано.
-    Если контент запрашивает Арина, запрос пересылается мне сразу и 1 раз.
+    Если контент запрашивает Арина, запрос пересылается мне сразу и 1 раз.\n
+    Возвращает список отправленных сообщений с контентом.
     """
     if request.chat.id == config.ARINA_ID:
         await config.bot.forward_message(
@@ -112,12 +113,7 @@ async def show_content(request: Message, content: list[str]):
             chunk.append(f'{index}. {line}')
             symbol_count += line_length
     messages.append(await safe_send_message(request.chat.id, ''.join(chunk)))
-    await asyncio.sleep(config.CONTENT_SHOWING_PERIOD)
-    await config.bot.delete_messages(request.chat.id, messages)
-    await safe_send_message(
-        request.chat.id,
-        'Я показал, а потом удалив, штобы никто не подсмотрел🐻',
-    )
+    return messages
 
 
 async def delete_content(
@@ -136,6 +132,7 @@ async def delete_content(
             request_message_id=request.message_id,
         )
         return
+    await state.clear()
     undeleted_content = []
     deleted_content = []
     for index, line in enumerate(get_content_from_file(filepath), start=1):
@@ -147,4 +144,3 @@ async def delete_content(
         file.writelines(undeleted_content)
     await show_content(request, deleted_content)
     await safe_send_message(request.chat.id, 'Я удалив вот это👆🤙💫', keyboard)
-    await state.clear()
