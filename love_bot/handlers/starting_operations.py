@@ -43,6 +43,7 @@ async def start_love_messages_deleting(request: Message, state: FSMContext):
     )
     await request.answer(
         (
+            'Список всех сообщений☝️\n'
             'Введите диапазоны сообщений через запятую\n'
             'Пример: 1, 17-19, 23-24'
         ),
@@ -66,6 +67,7 @@ async def start_dreams_deleting(request: Message, state: FSMContext):
     await safe_send_message(
         config.ARINA_ID,
         (
+            'Воть все Ваши сны☝️\n'
             'Фто тут нувно удалить? Мне нувны номера\n'
             'Например: 1, 17-19, 23-24 кнопочка "Отправить"⏎'
         ),
