@@ -72,9 +72,16 @@ async def write_content(
     filepath: str,
     keyboard: ReplyKeyboardMarkup | None = None,
 ):
-    """Запись любовных сообщений или снов в файлы."""
+    """
+    Запись любовных сообщений или снов в файлы.\n
+    У снов указывается время добавления.
+    """
     with open(filepath, 'a', encoding='utf-8') as file:
-        file.writelines((f"{request.text.replace('\n', ' ')}\n",))
+        line = request.text.replace('\n', ' ')
+        if request.chat.id == config.ARINA_ID:
+            now = datetime.now(config.TZ)
+            line += f" Добавлен: {now.strftime('%d.%m.%Y %H:%M')}"
+        file.writelines(f'{line}\n')
     await safe_send_message(
         request.chat.id, 'Сохранено☺️', keyboard, request.message_id,
     )
