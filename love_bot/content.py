@@ -7,7 +7,9 @@ from aiogram.types import Message, ReplyKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 
 from . import config
-from .utils import get_indexes, safe_send_message
+from .utils import (
+    get_indexes, get_date_with_month_written_by_letters, safe_send_message,
+)
 
 
 async def wish_good_morning():
@@ -74,14 +76,17 @@ async def write_content(
 ):
     """
     Запись любовных сообщений или снов в файлы.\n
-    У снов указывается время добавления.
+    У снов указываются дата и время добавления.
     """
     with open(filepath, 'a', encoding='utf-8') as file:
-        line = request.text.replace('\n', ' ')
+        line = [request.text.replace('\n', ' ')]
         if request.chat.id == config.ARINA_ID:
             now = datetime.now(config.TZ)
-            line += f" Добавлен: {now.strftime('%d.%m.%Y %H:%M')}"
-        file.writelines(f'{line}\n')
+            created_at = get_date_with_month_written_by_letters(
+                now.strftime('%d.%m.%Y г. %H:%M')
+            )
+            line.append(f'Добавлен: {created_at}')
+        file.writelines((' '.join(line) + '\n',))
     await safe_send_message(
         request.chat.id, 'Сохранено☺️', keyboard, request.message_id,
     )

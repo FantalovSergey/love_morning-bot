@@ -74,3 +74,20 @@ def get_indexes(text: str) -> list[int]:
         else:
             indexes.append(int(index_range))
     return indexes
+
+
+def get_date_with_month_written_by_letters(date: str):
+    """
+    Принимает строку с датой в формате '%d.%m'
+    (после месяца допускаются любые символы).\n
+    Возвращает строку с датой, где месяц записан словом,
+    а однозначное число – одной цифрой.
+    """
+    MONTHS = (
+        'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля',
+        'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    )
+    day = int(date[:2])
+    month = MONTHS[int(date[3:5]) - 1]
+    other = date[6:]
+    return f'{day} {month} {other}'

@@ -84,7 +84,7 @@ async def test_write_content(
     handle = mocked_open()
 
     handle.writelines.assert_called_once_with(
-        "hello world\n"
+        ("hello world\n",)
     )
 
     mock_send.assert_awaited_once()
