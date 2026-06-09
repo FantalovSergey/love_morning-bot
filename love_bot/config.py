@@ -17,7 +17,6 @@ handler.setFormatter(logging.Formatter(format))
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 logger.setLevel(logging.ERROR)
-logger.error('test')
 
 try:
     BOT_TOKEN, ARINA_ID, MY_ID = get_env_vars()
