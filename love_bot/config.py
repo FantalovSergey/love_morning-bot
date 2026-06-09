@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from typing import Iterable
 
@@ -8,12 +8,16 @@ from aiogram import Bot, Dispatcher
 from .dotenv_validation import get_env_vars
 from .middlewares import AccessMiddleware
 
+TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
+logging.Formatter.converter = lambda *_: datetime.now(TZ).timetuple()
+
 format = '%(asctime)s %(levelname)s %(message)s'
 handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
 handler.setFormatter(logging.Formatter(format))
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 logger.setLevel(logging.ERROR)
+logger.error('test')
 
 try:
     BOT_TOKEN, ARINA_ID, MY_ID = get_env_vars()
@@ -28,7 +32,6 @@ dispatcher.update.outer_middleware(AccessMiddleware(ARINA_ID, MY_ID))
 LOVE_MESSAGES_FILEPATH = '/data/love_messages.txt'
 DREAMS_FILEPATH = '/data/dreams.txt'
 
-TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
 SENDING_TIME = {
     'hour': 6,
     'minute': 0,
