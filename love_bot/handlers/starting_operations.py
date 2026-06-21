@@ -19,8 +19,8 @@ async def start_dream_writing(request: Message, state: FSMContext):
     await safe_send_message(
         config.ARINA_ID,
         'Напишите, каким сладеньким сном Вы хотите поделиться😋',
-        keyboards.cancel,
         request.message_id,
+        keyboards.cancel,
     )
 
 
@@ -71,7 +71,7 @@ async def start_dreams_deleting(request: Message, state: FSMContext):
             'Фто тут нувно удалить? Мне нувны номера\n'
             'Например: 1, 17-19, 23-24 кнопочка "Отправить"⏎'
         ),
-        keyboards.cancel,
+        keyboard=keyboards.cancel,
     )
     await delete_messages_after_showing_content(config.ARINA_ID, messages)
 

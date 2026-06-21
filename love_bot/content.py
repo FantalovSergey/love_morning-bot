@@ -55,7 +55,7 @@ async def send_love_message(request_message_id: int | None = None):
                 'Прости, пожалуйста🙏\n'
                 'Я написал Серёже, он попробует всё починить'
             ),
-            request_message_id=request_message_id,
+            request_message_id,
         )
         return
     love_message = choice(love_messages)
@@ -64,35 +64,10 @@ async def send_love_message(request_message_id: int | None = None):
         if now.hour in hour_range:
             love_message = love_message.replace('Доброе утро', hello_phrase)
             break
-    await safe_send_message(
-        config.ARINA_ID, love_message, request_message_id=request_message_id,
-    )
+    await safe_send_message(config.ARINA_ID, love_message, request_message_id)
 
 
-async def write_content(
-    request: Message,
-    filepath: str,
-    keyboard: ReplyKeyboardMarkup | None = None,
-):
-    """
-    Запись любовных сообщений или снов в файлы.\n
-    У снов указываются дата и время добавления.
-    """
-    with open(filepath, 'a', encoding='utf-8') as file:
-        line = [request.text.replace('\n', ' ')]
-        if request.chat.id == config.ARINA_ID:
-            now = datetime.now(config.TZ)
-            created_at = get_date_with_month_written_by_letters(
-                now.strftime('%d.%m.%Y г. %H:%M')
-            )
-            line.append(f'Добавлен: {created_at}')
-        file.writelines((' '.join(line) + '\n',))
-    await safe_send_message(
-        request.chat.id, 'Сохранено☺️', keyboard, request.message_id,
-    )
-
-
-async def show_content(request: Message, content: list[str]) -> list[Message]:
+async def show_content(request: Message, content: list[str]):
     """
     Отправка исчезающих любовных сообщений или снов в л/с по запросу.\n
     Учитывается лимит символов Telegram для одного сообщения.
@@ -106,7 +81,7 @@ async def show_content(request: Message, content: list[str]) -> list[Message]:
             from_chat_id=config.ARINA_ID,
             message_id=request.message_id,
         )
-    messages = []
+    messages: list[int] = []
     if not content:
         chunk = ['Пуфто, ничего нет🙃']
     else:
@@ -128,6 +103,34 @@ async def show_content(request: Message, content: list[str]) -> list[Message]:
     return messages
 
 
+async def write_content(
+    request: Message,
+    filepath: str,
+    keyboard: ReplyKeyboardMarkup | None = None,
+):
+    """
+    Запись любовных сообщений или снов в файлы.\n
+    У снов указываются дата и время добавления.
+    """
+    if request.text is None:
+        config.logger.error(
+            'Ошибка записи контента в файл: request.text is None'
+        )
+        return
+    with open(filepath, 'a', encoding='utf-8') as file:
+        line = [request.text.replace('\n', ' ')]
+        if request.chat.id == config.ARINA_ID:
+            now = datetime.now(config.TZ)
+            created_at = get_date_with_month_written_by_letters(
+                now.strftime('%d.%m.%Y г. %H:%M')
+            )
+            line.append(f'Добавлен: {created_at}')
+        file.writelines((' '.join(line) + '\n',))
+    await safe_send_message(
+        request.chat.id, 'Сохранено☺️', request.message_id, keyboard,
+    )
+
+
 async def delete_content(
     request: Message,
     state: FSMContext,
@@ -141,7 +144,7 @@ async def delete_content(
         await safe_send_message(
             request.chat.id,
             'Проверьте правильность ввода😐',
-            request_message_id=request.message_id,
+            request.message_id,
         )
         return
     await state.clear()
@@ -155,4 +158,6 @@ async def delete_content(
     with open(filepath, 'w', encoding='utf-8') as file:
         file.writelines(undeleted_content)
     await show_content(request, deleted_content)
-    await safe_send_message(request.chat.id, 'Я удалив вот это👆🤙💫', keyboard)
+    await safe_send_message(
+        request.chat.id, 'Я удалив вот это👆🤙💫', keyboard=keyboard,
+    )

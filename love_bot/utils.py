@@ -1,7 +1,7 @@
 import asyncio
 
 from aiogram.exceptions import TelegramNetworkError, TelegramServerError
-from aiogram.types import Message, ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup
 
 from . import config
 
@@ -9,9 +9,9 @@ from . import config
 async def safe_send_message(
     chat_id: int,
     message: str,
-    keyboard: ReplyKeyboardMarkup | None = None,
     request_message_id: int | None = None,
-) -> int:
+    keyboard: ReplyKeyboardMarkup | None = None,
+):
     """
     Отправка сообщений по указанному id пользователя.\n
     Логирование исключений; 'chat not found' не обрабатывается,
@@ -49,7 +49,7 @@ async def safe_send_message(
 
 
 async def delete_messages_after_showing_content(
-    chat_id: int, messages: list[Message],
+    chat_id: int, messages: list[int],
 ):
     """Удаление сообщений с контентом через некоторое время."""
     await asyncio.sleep(config.CONTENT_SHOWING_PERIOD)
@@ -62,10 +62,12 @@ async def delete_messages_after_showing_content(
     )
 
 
-def get_indexes(text: str) -> list[int]:
+def get_indexes(text: str | None):
     """Преобразование текста с диапазонами сообщений в список индексов."""
+    if text is None:
+        raise ValueError
     index_ranges = text.split(', ')
-    indexes = []
+    indexes: list[int] = []
     for index_range in index_ranges:
         if '-' in index_range:
             start_index, stop_index = index_range.split('-')

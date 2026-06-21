@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
-from typing import Iterable
 
 from aiogram import Bot, Dispatcher
 
@@ -26,7 +25,7 @@ except ValueError as absent_env_vars_error:
 
 bot = Bot(BOT_TOKEN)
 dispatcher = Dispatcher()
-dispatcher.update.outer_middleware(AccessMiddleware(ARINA_ID, MY_ID))
+dispatcher.message.outer_middleware(AccessMiddleware(ARINA_ID, MY_ID))
 
 LOVE_MESSAGES_FILEPATH = '/data/love_messages.txt'
 DREAMS_FILEPATH = '/data/dreams.txt'
@@ -37,8 +36,10 @@ SENDING_TIME = {
     'second': 0,
     'microsecond': 0,
 }
-DAY_PARTS_EXCEPT_MORNING: tuple[tuple[Iterable[int], str]] = (
-    (tuple(range(4)) + tuple(range(23, 24)), 'Спокойноной ночи'),
+DAY_PARTS_EXCEPT_MORNING: (
+    tuple[tuple[tuple[int, ...], str], tuple[range, str], tuple[range, str]]
+) = (
+    (tuple(range(4)) + tuple(range(23, 24)), 'Спокойной ночи'),
     (range(12, 16), 'Добрый день'),
     (range(16, 23), 'Добрый вечер'),
 )

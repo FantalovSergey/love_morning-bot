@@ -23,8 +23,8 @@ async def start(request: Message, state: FSMContext):
     await safe_send_message(
         config.ARINA_ID,
         config.START_MESSAGE,
-        keyboards.Arina_keyboard,
         request.message_id,
+        keyboards.Arina_keyboard,
     )
 
 
@@ -35,9 +35,9 @@ async def cancel(request: Message, state: FSMContext):
     await safe_send_message(
         request.chat.id,
         'Есть "Отмена"🫡',
+        request.message_id,
         (
             keyboards.Arina_keyboard if request.chat.id == config.ARINA_ID else
             keyboards.my_keyboard
         ),
-        request_message_id=request.message_id,
     )

@@ -17,6 +17,13 @@ async def write_dream(request: Message, state: FSMContext):
     Получение сна из сообщения и запись в файл.\n
     Присутствует ограничение количества символов.
     """
+    if request.text is None:
+        await safe_send_message(
+            config.ARINA_ID,
+            'А фто нувно запифать, я не увидел😫😫😫',
+            request.message_id,
+        )
+        return
     symbol_exceeding = len(request.text) - config.TO_BOT_MESSAGE_SYMBOL_LIMIT
     if symbol_exceeding > 0:
         symbol_limit_warning = (
@@ -54,5 +61,9 @@ async def delete_dreams(request: Message, state: FSMContext):
 async def write_note_for_Arina(request: Message, state: FSMContext):
     """Отправка Арине кастомного уведомления из сообщения."""
     await state.clear()
-    await safe_send_message(config.ARINA_ID, request.text)
+    await config.bot.copy_message(
+        config.ARINA_ID,
+        config.MY_ID,
+        request.message_id,
+    )
     await request.answer('✅', reply_markup=my_keyboard)
