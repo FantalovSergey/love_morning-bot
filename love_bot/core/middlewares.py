@@ -1,12 +1,15 @@
-from typing import Callable, Any, Awaitable
+from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 
+from love_bot.core import templates
+from love_bot.core.utils import safe_send_message
+
 
 class AccessMiddleware(BaseMiddleware):
     """Ограничение доступа неизвестных пользователей."""
-    def __init__(self, *allowed_users: int):
+    def __init__(self, *allowed_users: int) -> None:
         super().__init__()
         self.allowed_users = allowed_users
 
@@ -19,10 +22,10 @@ class AccessMiddleware(BaseMiddleware):
         if isinstance(event, Message) and (
             event.chat.id not in self.allowed_users
         ):
-            await event.answer(
-                'Доброго времени суток! Этот бот предназначен исключительно '
-                'для одного человека, для Арины Атаманюк. Если Вы её знаете, '
-                'передайте ей привет🖐️'
+            await safe_send_message(
+                event.chat.id,
+                templates.MESSAGE_FOR_UNKNOWN_USERS,
+                event.message_id,
             )
             return
         return await handler(event, data)

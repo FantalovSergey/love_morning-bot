@@ -1,0 +1,2 @@
+class StopTest(Exception):
+    pass

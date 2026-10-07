@@ -3,161 +3,81 @@ import asyncio
 from datetime import datetime
 from random import choice
 
-from aiogram.types import Message, ReplyKeyboardMarkup
-from aiogram.fsm.context import FSMContext
-
-from . import config
-from .utils import (
-    get_indexes, get_date_with_month_written_by_letters, safe_send_message,
+from love_bot.core import config
+from love_bot.core.exceptions import EmptyFileError, NoContentForDeletingError
+from love_bot.core.utils import (
+    get_content_for_repr,
+    get_date_with_month_written_by_letters,
+    get_indexes,
+    safe_send_message,
 )
+from love_bot.files import safe_read_file, safe_write_in_file
 
 
-async def wish_good_morning():
-    """Пожелание доброго утра каждый день в определённое время."""
-    while True:
+def retrieve_content(filepath: str) -> str:
+    """
+    Вовзращает один элемент контента либо извинения,
+    если есть проблемы с файлом.
+    """
+    try:
+        return choice(safe_read_file(filepath))
+    except (EmptyFileError, OSError):
+        return (
+            'Я не могу тебе ничего отправить😢\n'
+            'Прости, пожалуйста🙏'
+        )
+
+
+def list_content(filepath: str) -> list[str]:
+    """
+    Возвращает контент в формате, подходящем для отправки в Telegram:
+    с нумерацией и с учётом лимита символов для одного сообщения.\n
+    Бросает исключения: EmptyFileError; OSError при ошибках чтения файла.
+    """
+    return get_content_for_repr(safe_read_file(filepath))
+
+
+def write_content(filepath: str, text: str, timestamp: bool = False) -> None:
+    """
+    Запись контента в файл.\n
+    В конце файла ставится символ переноса строки.
+    Если timestamp=True, указываются дата и время добавления.
+    Бросает исключения: OSError при ошибках записи в файл.
+    """
+    line = [text.replace('\n', ' ')]
+    if timestamp:
         now = datetime.now(config.TZ)
-        delta = now.replace(**config.SENDING_TIME) - now
-        # Если дельта отрицательная, свойство seconds вернёт количество секунд
-        # до момента отправки, которая произойдёт на следующий день
-        await asyncio.sleep(delta.seconds)
-        await send_love_message()
-        await asyncio.sleep(1)
-
-
-def get_content_from_file(filepath: str) -> list[str]:
-    """
-    Получения всех любовных сообщений или снов из файлов.\n
-    Логирование ошибок отсутствия самого файла
-    или содержимого файла с любовными сообщениями.
-    """
-    try:
-        with open(filepath, encoding='utf-8') as file:
-            content = file.readlines()
-    except FileNotFoundError:
-        config.logger.error(f'Файл {filepath} не найден.')
-        return []
-    if not content and filepath == config.LOVE_MESSAGES_FILEPATH:
-        config.logger.error(f'Файл {filepath} пуст.')
-    return content
-
-
-async def send_love_message(request_message_id: int | None = None):
-    """
-    Отправка любовного сообщения Арине.\n
-    Если есть проблемы с файлом, бот извиняется.
-    """
-    love_messages = get_content_from_file(config.LOVE_MESSAGES_FILEPATH)
-    if not love_messages:
-        await safe_send_message(
-            config.ARINA_ID,
-            (
-                'Я не могу тебе ничего отправить😢\n'
-                'Прости, пожалуйста🙏\n'
-                'Я написал Серёже, он попробует всё починить'
-            ),
-            request_message_id,
+        created_at = get_date_with_month_written_by_letters(
+            now.strftime('%d.%m.%Y г. %H:%M'),
         )
-        return
-    love_message = choice(love_messages)
-    now = datetime.now(config.TZ)
-    for hour_range, hello_phrase in config.DAY_PARTS_EXCEPT_MORNING:
-        if now.hour in hour_range:
-            love_message = love_message.replace('Доброе утро', hello_phrase)
-            break
-    await safe_send_message(config.ARINA_ID, love_message, request_message_id)
+        line.append(f'Добавлен: {created_at}')
+    safe_write_in_file(filepath, 'a', (' '.join(line) + '\n',))
 
 
-async def show_content(request: Message, content: list[str]):
+def delete_content(filepath: str, index_ranges: str) -> list[str]:
     """
-    Отправка исчезающих любовных сообщений или снов в л/с по запросу.\n
-    Учитывается лимит символов Telegram для одного сообщения.
-    Содержимое (любовные сообщения или сны) пронумеровано.
-    Если контент запрашивает Арина, запрос пересылается мне сразу и 1 раз.\n
-    Возвращает список отправленных сообщений с контентом.
+    Удаление контента из файлов по индексам.\n
+    Бросает исключения: EmptyFileError; NoContentForDeletingError;
+    OSError при ошибках операций чтения/записи с файлом;
+    ValueError при некорректном вводе индексов.\n
+    Возвращает удалённый контент в формате, подходящем для отправки в Telegram:
+    с нумерацией и с учётом лимита символов для одного сообщения.
     """
-    if request.chat.id == config.ARINA_ID:
-        await config.bot.forward_message(
-            chat_id=config.MY_ID,
-            from_chat_id=config.ARINA_ID,
-            message_id=request.message_id,
-        )
-    messages: list[int] = []
-    if not content:
-        chunk = ['Пуфто, ничего нет🙃']
-    else:
-        chunk = []
-        symbol_count = 0
-        for index, line in enumerate(content, start=1):
-            line_length = len(line)
-            if symbol_count + line_length > (
-                config.FROM_BOT_MESSAGE_SYMBOL_LIMIT
-            ):
-                messages.append(
-                    await safe_send_message(request.chat.id, ''.join(chunk))
-                )
-                chunk = []
-                symbol_count = 0
-            chunk.append(f'{index}. {line}')
-            symbol_count += line_length
-    messages.append(await safe_send_message(request.chat.id, ''.join(chunk)))
-    return messages
-
-
-async def write_content(
-    request: Message,
-    filepath: str,
-    keyboard: ReplyKeyboardMarkup | None = None,
-):
-    """
-    Запись любовных сообщений или снов в файлы.\n
-    У снов указываются дата и время добавления.
-    """
-    if request.text is None:
-        config.logger.error(
-            'Ошибка записи контента в файл: request.text is None'
-        )
-        return
-    with open(filepath, 'a', encoding='utf-8') as file:
-        line = [request.text.replace('\n', ' ')]
-        if request.chat.id == config.ARINA_ID:
-            now = datetime.now(config.TZ)
-            created_at = get_date_with_month_written_by_letters(
-                now.strftime('%d.%m.%Y г. %H:%M')
-            )
-            line.append(f'Добавлен: {created_at}')
-        file.writelines((' '.join(line) + '\n',))
-    await safe_send_message(
-        request.chat.id, 'Сохранено☺️', request.message_id, keyboard,
-    )
-
-
-async def delete_content(
-    request: Message,
-    state: FSMContext,
-    filepath: str,
-    keyboard: ReplyKeyboardMarkup,
-):
-    """Удаление любовных сообщений или снов из файлов по индексам."""
-    try:
-        indexes_for_deleting = get_indexes(request.text)
-    except ValueError:
-        await safe_send_message(
-            request.chat.id,
-            'Проверьте правильность ввода😐',
-            request.message_id,
-        )
-        return
-    await state.clear()
-    undeleted_content = []
-    deleted_content = []
-    for index, line in enumerate(get_content_from_file(filepath), start=1):
-        (
-            deleted_content.append(line) if index in indexes_for_deleting else
+    indexes_for_deleting = get_indexes(index_ranges)
+    undeleted_content: list[str] = []
+    deleted_content: list[str] = []
+    content = safe_read_file(filepath)
+    for index, line in enumerate(content, start=1):
+        if index in indexes_for_deleting:
+            deleted_content.append(line)
+        else:
             undeleted_content.append(line)
+    if not deleted_content:
+        ERROR_MESSAGE = (
+            'Ошибка удаления контента. '
+            'По указанным индексам невозможно удалить ни один элемент'
         )
-    with open(filepath, 'w', encoding='utf-8') as file:
-        file.writelines(undeleted_content)
-    await show_content(request, deleted_content)
-    await safe_send_message(
-        request.chat.id, 'Я удалив вот это👆🤙💫', keyboard=keyboard,
-    )
+        asyncio.create_task(safe_send_message(config.MY_ID, ERROR_MESSAGE))
+        raise NoContentForDeletingError(ERROR_MESSAGE)
+    safe_write_in_file(filepath, 'w', undeleted_content)
+    return get_content_for_repr(deleted_content)

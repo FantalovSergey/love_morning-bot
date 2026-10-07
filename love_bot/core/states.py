@@ -1,21 +1,21 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class DeleteLoveMessages(StatesGroup):
+class LoveMessagesDeleting(StatesGroup):
     """FSM для удаления любовных сообщений."""
-    indexes = State()
+    indexes_waiting = State()
 
 
-class DeleteDreams(StatesGroup):
+class DreamsDeleting(StatesGroup):
     """FSM для удаления снов."""
-    indexes = State()
+    indexes_waiting = State()
 
 
-class WriteDream(StatesGroup):
+class DreamWriting(StatesGroup):
     """FSM для записи снов."""
-    dream = State()
+    dream_waiting = State()
 
 
-class SendNoteForArina(StatesGroup):
+class NoteForArinaSending(StatesGroup):
     """FSM для отправки заметок Арине."""
-    note = State()
+    note_waiting = State()
