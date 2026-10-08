@@ -62,16 +62,16 @@ async def test_safe_send_message_with_request_message_id(
     )
 
 
-def test_get_indexes_single() -> None:
-    assert get_indexes('1, 3') == [1, 3]
-
-
-def test_get_indexes_ranges() -> None:
-    assert get_indexes('1-3') == [1, 2, 3]
-
-
-def test_get_indexes_mixed() -> None:
-    assert get_indexes('1, 3-5, 7') == [1, 3, 4, 5, 7]
+@pytest.mark.parametrize(
+    ('input', 'expected_return'),
+    (
+        ('1, 3', [1, 3]),
+        ('1-3', [1, 2, 3]),
+        ('1, 3-5, 7', [1, 3, 4, 5, 7])
+    ),
+)
+def test_get_indexes(input: str, expected_return: list[int]) -> None:
+    assert get_indexes(input) == expected_return
 
 
 def test_get_content_for_repr(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -86,13 +86,13 @@ def test_get_content_for_repr(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(
-    ('source', 'expected'),
+    ('source', 'expected_return'),
     (
         ('01.01', '1 января '),
         ('15.10.2025', '15 октября 2025'),
     ),
 )
 def test_get_date_with_month_written_by_letters(
-    source: str, expected: str,
+    source: str, expected_return: str,
 ) -> None:
-    assert get_date_with_month_written_by_letters(source) == expected
+    assert get_date_with_month_written_by_letters(source) == expected_return

@@ -62,7 +62,7 @@ def safe_write_in_file(
     for attempt in range(config.FILE_OPENING_ATTEMPTS_LIMIT):
         try:
             with open(filepath, mode, encoding='utf-8') as file:
-                file.writelines(content)
+                return file.writelines(content)
         except FileNotFoundError:
             asyncio.create_task(
                 safe_send_message(
