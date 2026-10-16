@@ -18,7 +18,7 @@ async def test_validate_request_text_is_not_none(
 ) -> None:
     with pytest.raises(EmptyRequestError):
         validate_request_text_is_not_none(request_text=None)
-    mock_safe_send.assert_called_once_with(config.MY_ID, ANY)
+    mock_safe_send.assert_called_once_with(config.MY_ID, message=ANY)
 
 
 @pytest.mark.asyncio
@@ -29,7 +29,7 @@ async def test_validate_writing_request(
     with pytest.raises(TooLongContentMessageError) as exception_info:
         validate_writing_request(too_long_message)
     assert exception_info.value.symbol_limit_exceeding == symbol_exceeding
-    mock_safe_send.assert_called_once_with(config.MY_ID, ANY)
+    mock_safe_send.assert_called_once_with(config.MY_ID, message=ANY)
 
 
 @pytest.mark.asyncio

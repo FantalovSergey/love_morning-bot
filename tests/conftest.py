@@ -109,6 +109,21 @@ def repr_content(sent_message_ids: list[int]) -> list[str]:
 
 
 @pytest.fixture
+def file_content() -> str:
+    return 'test'
+
+
+@pytest.fixture
+def filepath() -> str:
+    return 'test.txt'
+
+
+@pytest.fixture
+def file_open_mode() -> str:
+    return 'a'
+
+
+@pytest.fixture
 def too_long_message(symbol_exceeding: int) -> str:
     return 'a' * (config.WRITING_CONTENT_SYMBOL_LIMIT + symbol_exceeding)
 

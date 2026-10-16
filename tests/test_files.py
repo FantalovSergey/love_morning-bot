@@ -17,7 +17,7 @@ RETRYABLE_EXEPTIONS: tuple[int, ...] = (errno.ESTALE,)
     ('tested_func', 'args', 'phrase_is_contained'),
     (
         (safe_read_file, (ANY,), 'чтени'),
-        (safe_write_in_file, (ANY, ANY, ANY), 'запис')
+        (safe_write_in_file, 3 * (ANY,), 'запис')
     ),
 )
 @patch('love_bot.files.safe_send_message', autospec=True)
@@ -52,7 +52,7 @@ async def test_safe_open_file_with_not_retryable_os_error(
     ('tested_func', 'args', 'phrase_is_contained'),
     (
         (safe_read_file, (ANY,), 'чтени'),
-        (safe_write_in_file, (ANY, ANY, ANY), 'запис')
+        (safe_write_in_file, 3 * (ANY,), 'запис')
     ),
 )
 @patch('love_bot.files.safe_send_message', autospec=True)
@@ -84,5 +84,19 @@ async def test_safe_read_empty_file(mock_safe_send: AsyncMock) -> None:
         patch('builtins.open', new_callable=mock_open),
         pytest.raises(EmptyFileError)
     ):
-        safe_read_file(ANY)
+        safe_read_file(filepath=ANY)
     mock_safe_send.assert_called_once_with(config.MY_ID, ANY)
+
+
+@patch('builtins.open', new_callable=mock_open)
+def test_safe_write_file_one_time(
+    mock_open_file: MagicMock,
+    filepath: str,
+    file_open_mode: str,
+    file_content: str,
+) -> None:
+    safe_write_in_file(filepath, file_open_mode, file_content)
+    mock_open_file.assert_called_once_with(
+        filepath, file_open_mode, encoding='utf-8',
+    )
+    mock_open_file().writelines.assert_called_once_with(file_content)
