@@ -128,11 +128,11 @@ def get_date_with_month_written_by_letters(date: str) -> str:
     Возвращает строку с датой, где месяц записан словом,
     а однозначное число – одной цифрой.
     """
-    MONTHS = (
+    months = (
         'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля',
         'августа', 'сентября', 'октября', 'ноября', 'декабря',
     )
     day = int(date[:2])
-    month = MONTHS[int(date[3:5]) - 1]
+    month = months[int(date[3:5]) - 1]
     other = date[6:]
     return f'{day} {month} {other}'

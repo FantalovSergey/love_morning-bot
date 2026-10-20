@@ -1,6 +1,9 @@
 import asyncio
+import errno
 from datetime import datetime
 from typing import NoReturn
+
+from aiogram.types import FSInputFile
 
 from love_bot.content import retrieve_content
 from love_bot.core import config, templates
@@ -36,3 +39,27 @@ async def delete_messages_after_content_showing(
         chat_id=chat_id,
         message_id=message_ids[0],
     )
+
+
+async def send_backups() -> NoReturn:
+    """Отправка бэкапов всех редактируемых файлов мне в л/с."""
+    filepaths = (
+        config.LOVE_MESSAGES_FILEPATH,
+        config.DREAMS_FILEPATH,
+        config.LOGS_FILEPATH,
+    )
+    while True:
+        for path in filepaths:
+            try:
+                await config.bot.send_document(config.MY_ID, FSInputFile(path))
+            except Exception as error:
+                if f'Errno {errno.ENOENT}' in str(error):
+                    await safe_send_message(
+                        config.MY_ID, f'Отсутствует файл {path}',
+                    )
+                else:
+                    config.logger.exception(
+                        'Ошибка при создании бэкапа для файла %s', path,
+                    )
+                    await safe_send_message(config.MY_ID, str(error))
+        await asyncio.sleep(config.BACKUP_PERIOD)

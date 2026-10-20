@@ -13,8 +13,8 @@ from tests.types import DispatcherFactory, UpdateFactory
 
 
 @pytest_asyncio.fixture
-async def dispatcher(bot: Bot) -> Dispatcher:
-    for chat_id in (config.ARINA_ID, config.MY_ID):
+async def dispatcher(bot: Bot, known_chat_ids: tuple[int, int]) -> Dispatcher:
+    for chat_id in known_chat_ids:
         context = dp.fsm.get_context(bot, chat_id, user_id=chat_id)
         await context.clear()
     return dp
@@ -79,6 +79,11 @@ def received_message_id() -> int:
 @pytest.fixture
 def chat_id() -> int:
     return 1
+
+
+@pytest.fixture
+def known_chat_ids() -> tuple[int, int]:
+    return config.ARINA_ID, config.MY_ID
 
 
 @pytest.fixture

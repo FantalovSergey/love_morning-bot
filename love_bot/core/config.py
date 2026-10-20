@@ -6,10 +6,15 @@ from aiogram import Bot
 
 from love_bot.env import get_env_vars
 
+MINUTE = 60
+HOUR = 60 * MINUTE
+DAY = 24 * HOUR
+
 TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
 
+LOGS_FILEPATH = '/data/logs.log'
 logging.Formatter.converter = lambda *_: datetime.now(TZ).timetuple()
-handler = RotatingFileHandler('/data/logs.log', maxBytes=500000, backupCount=5)
+handler = RotatingFileHandler(LOGS_FILEPATH, maxBytes=500000, backupCount=5)
 handler.setFormatter(
     logging.Formatter('%(asctime)s %(levelname)s %(message)s'),
 )
@@ -52,4 +57,5 @@ DELETING_MESSAGE_COUNT_LIMIT = 100
 
 FILE_OPENING_ATTEMPTS_LIMIT = 3
 
-CONTENT_SHOWING_PERIOD = 300
+CONTENT_SHOWING_PERIOD = 5 * MINUTE
+BACKUP_PERIOD = 5 * DAY

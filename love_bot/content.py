@@ -73,11 +73,11 @@ def delete_content(filepath: str, index_ranges: str) -> list[str]:
         else:
             undeleted_content.append(line)
     if not deleted_content:
-        ERROR_MESSAGE = (
+        error_message = (
             'Ошибка удаления контента. '
             'По указанным индексам невозможно удалить ни один элемент'
         )
-        asyncio.create_task(safe_send_message(config.MY_ID, ERROR_MESSAGE))
-        raise NoContentForDeletingError(ERROR_MESSAGE)
+        asyncio.create_task(safe_send_message(config.MY_ID, error_message))
+        raise NoContentForDeletingError(error_message)
     safe_write_in_file(filepath, 'w', undeleted_content)
     return get_content_for_repr(deleted_content)

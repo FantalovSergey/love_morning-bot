@@ -3,7 +3,7 @@ import asyncio
 from love_bot.core import config
 from love_bot.core.utils import safe_send_message
 from love_bot.dispatcher import dispatcher
-from love_bot.tasks import wish_good_morning
+from love_bot.tasks import send_backups, wish_good_morning
 
 
 async def main() -> None:
@@ -15,6 +15,7 @@ async def main() -> None:
         wish_good_morning(),
         dispatcher.start_polling(config.bot),
         safe_send_message(config.MY_ID, 'Бот запущен'),
+        send_backups(),
     )
 
 
