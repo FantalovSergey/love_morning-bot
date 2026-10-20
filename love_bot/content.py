@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from random import choice
 
-from love_bot.core import config
+from love_bot.core import config, templates
 from love_bot.core.exceptions import EmptyFileError, NoContentForDeletingError
 from love_bot.core.utils import (
     get_content_for_repr,
@@ -22,10 +22,7 @@ def retrieve_content(filepath: str) -> str:
     try:
         return choice(safe_read_file(filepath))
     except (EmptyFileError, OSError):
-        return (
-            'Я не могу тебе ничего отправить😢\n'
-            'Прости, пожалуйста🙏'
-        )
+        return templates.LOVE_MESSAGE_FILE_ERROR
 
 
 def list_content(filepath: str) -> list[str]:
