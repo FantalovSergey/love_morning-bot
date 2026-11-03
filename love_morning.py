@@ -8,8 +8,8 @@ from love_bot.tasks import send_backups, wish_good_morning
 
 async def main() -> None:
     """
-    Запускает отправку утренних сообщений, поллинг бота
-    и уведомляет меня об успешном запуске в Telegram.
+    Запускает отправку утренних сообщений и бэкапов по расписанию,
+    поллинг бота и уведомляет меня в Telegram об успешном запуске.
     """
     await asyncio.gather(
         wish_good_morning(),

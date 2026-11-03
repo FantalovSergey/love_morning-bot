@@ -68,18 +68,18 @@ async def test_wish_good_MORNING(
 
 
 @pytest.mark.asyncio
+@patch('love_bot.tasks.asyncio.sleep', autospec=True)
 @patch('love_bot.tasks.config.bot.delete_messages', autospec=True)
 @patch('love_bot.tasks.config.bot.edit_message_text', autospec=True)
 async def test_delete_one_message_after_content_showing(
     mock_edit_message: AsyncMock,
     mock_delete_messages: AsyncMock,
+    mock_sleep: AsyncMock,
     chat_id: int,
     sent_message_id: int,
 ) -> None:
-    with patch('love_bot.tasks.asyncio.sleep'):
-        await delete_messages_after_content_showing(
-            chat_id, [sent_message_id],
-        )
+    await delete_messages_after_content_showing(chat_id, [sent_message_id])
+    mock_sleep.assert_awaited_once_with(config.CONTENT_SHOWING_PERIOD)
     mock_delete_messages.assert_not_awaited()
     mock_edit_message.assert_awaited_once_with(
         templates.AFTER_DELETING_NOTIFICATION,

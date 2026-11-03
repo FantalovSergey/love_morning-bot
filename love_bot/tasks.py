@@ -53,13 +53,22 @@ async def send_backups() -> NoReturn:
             try:
                 await config.bot.send_document(config.MY_ID, FSInputFile(path))
             except Exception as error:
-                if f'Errno {errno.ENOENT}' in str(error):
+                error_message = str(error).lower()
+                if f'errno {errno.ENOENT}' in error_message:
                     await safe_send_message(
-                        config.MY_ID, f'Отсутствует файл {path}',
+                        config.MY_ID,
+                        f'Отсутствует файл {path}',
+                        markdown=False,
+                    )
+                elif 'file must be non-empty' in error_message:
+                    await safe_send_message(
+                        config.MY_ID, f'Файл {path} пуст', markdown=False,
                     )
                 else:
                     config.logger.exception(
                         'Ошибка при создании бэкапа для файла %s', path,
                     )
-                    await safe_send_message(config.MY_ID, str(error))
+                    await safe_send_message(
+                        config.MY_ID, str(error), markdown=False,
+                    )
         await asyncio.sleep(config.BACKUP_PERIOD)

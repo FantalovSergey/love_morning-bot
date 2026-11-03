@@ -19,10 +19,13 @@ def safe_read_file(filepath: str) -> list[str]:
         try:
             with open(filepath, encoding='utf-8') as file:
                 content = file.readlines()
+                break
         except FileNotFoundError:
             asyncio.create_task(
                 safe_send_message(
-                    config.MY_ID, f'Ошибка чтения: файл {filepath} не найден',
+                    config.MY_ID,
+                    f'Ошибка чтения: файл {filepath} не найден',
+                    markdown=False,
                 ),
             )
             raise
@@ -36,7 +39,9 @@ def safe_read_file(filepath: str) -> list[str]:
             ):
                 config.logger.exception(issue_message)
                 asyncio.create_task(
-                    safe_send_message(config.MY_ID, issue_message),
+                    safe_send_message(
+                        config.MY_ID, issue_message, markdown=False,
+                    ),
                 )
                 raise
             config.logger.warning(
@@ -47,7 +52,9 @@ def safe_read_file(filepath: str) -> list[str]:
             )
     if not content:
         error_message = f'Файл {filepath} пуст'
-        asyncio.create_task(safe_send_message(config.MY_ID, error_message))
+        asyncio.create_task(
+            safe_send_message(config.MY_ID, error_message, markdown=False),
+        )
         raise EmptyFileError(error_message)
     return content
 
@@ -68,6 +75,7 @@ def safe_write_in_file(
                 safe_send_message(
                     config.MY_ID,
                     f'Ошибка записи в файл {filepath}. Директория не найдена',
+                    markdown=False,
                 ),
             )
             raise
@@ -81,7 +89,9 @@ def safe_write_in_file(
             ):
                 config.logger.exception(issue_message)
                 asyncio.create_task(
-                    safe_send_message(config.MY_ID, issue_message),
+                    safe_send_message(
+                        config.MY_ID, issue_message, markdown=False,
+                    ),
                 )
                 raise
             config.logger.warning(

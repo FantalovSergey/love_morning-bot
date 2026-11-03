@@ -1,4 +1,3 @@
-import errno
 from typing import Callable
 from unittest.mock import ANY, AsyncMock, MagicMock, mock_open, patch
 
@@ -6,9 +5,13 @@ import pytest
 
 from love_bot.core import config
 from love_bot.core.exceptions import EmptyFileError
-from love_bot.files import safe_read_file, safe_write_in_file
+from love_bot.files import (
+    RETRYABLE_EXEPTIONS, safe_read_file, safe_write_in_file,
+)
 
-RETRYABLE_EXEPTIONS: tuple[int, ...] = (errno.ESTALE,)
+READING = 'чтени'
+WRITING = 'запис'
+EMPTY = 'пуст'
 
 
 @pytest.mark.asyncio
@@ -16,8 +19,8 @@ RETRYABLE_EXEPTIONS: tuple[int, ...] = (errno.ESTALE,)
 @pytest.mark.parametrize(
     ('tested_func', 'args', 'phrase_is_contained'),
     (
-        (safe_read_file, (ANY,), 'чтени'),
-        (safe_write_in_file, 3 * (ANY,), 'запис')
+        (safe_read_file, (ANY,), READING),
+        (safe_write_in_file, 3 * (ANY,), WRITING)
     ),
 )
 @patch('love_bot.files.safe_send_message', autospec=True)
@@ -40,7 +43,8 @@ async def test_safe_open_file_with_not_retryable_os_error(
     mock_safe_send.assert_called_once()
     chat_id, error_message = mock_safe_send.call_args.args
     assert chat_id == config.MY_ID
-    assert phrase_is_contained in error_message
+    assert phrase_is_contained in error_message.lower()
+    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
 @pytest.mark.asyncio
@@ -51,8 +55,8 @@ async def test_safe_open_file_with_not_retryable_os_error(
 @pytest.mark.parametrize(
     ('tested_func', 'args', 'phrase_is_contained'),
     (
-        (safe_read_file, (ANY,), 'чтени'),
-        (safe_write_in_file, 3 * (ANY,), 'запис')
+        (safe_read_file, (ANY,), READING),
+        (safe_write_in_file, 3 * (ANY,), WRITING)
     ),
 )
 @patch('love_bot.files.safe_send_message', autospec=True)
@@ -74,18 +78,25 @@ async def test_safe_open_file_with_retryable_os_error(
     mock_safe_send.assert_called_once()
     chat_id, error_message = mock_safe_send.call_args.args
     assert chat_id == config.MY_ID
-    assert phrase_is_contained in error_message
+    assert phrase_is_contained in error_message.lower()
+    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
 @pytest.mark.asyncio
 @patch('love_bot.files.safe_send_message', autospec=True)
-async def test_safe_read_empty_file(mock_safe_send: AsyncMock) -> None:
-    with (
-        patch('builtins.open', new_callable=mock_open),
-        pytest.raises(EmptyFileError)
-    ):
-        safe_read_file(filepath=ANY)
-    mock_safe_send.assert_called_once_with(config.MY_ID, ANY)
+@patch('builtins.open', new_callable=mock_open)
+async def test_safe_read_empty_file(
+    mock_open_file: MagicMock, mock_safe_send: AsyncMock, filepath: str,
+) -> None:
+    with pytest.raises(EmptyFileError):
+        safe_read_file(filepath)
+    mock_open_file.assert_called_once_with(filepath, encoding='utf-8')
+    mock_open_file().readlines.assert_called_once()
+    mock_safe_send.assert_called_once()
+    chat_id, error_message = mock_safe_send.call_args.args
+    assert chat_id == config.MY_ID
+    assert EMPTY in error_message.lower()
+    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
 @patch('builtins.open', new_callable=mock_open)

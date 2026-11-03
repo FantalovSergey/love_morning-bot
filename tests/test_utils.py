@@ -76,12 +76,12 @@ def test_get_indexes(input: str, expected_return: list[int]) -> None:
 
 def test_get_content_for_repr(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        'love_bot.core.utils.config.TELEGRAM_MESSAGE_SYMBOL_LIMIT', 20,
+        'love_bot.core.utils.config.TELEGRAM_MESSAGE_SYMBOL_LIMIT', 25,
     )
     assert (
         get_content_for_repr(
             ['hello\n', 'world\n', '!\n', '!\n'],
-        ) == ['1. hello\n2. world\n', '3. !\n4. !\n']
+        ) == ['1. `hello\n`2. `world\n`', '3. `!\n`4. `!\n`']
     )
 
 

@@ -12,6 +12,7 @@ async def safe_send_message(
     message: str,
     request_message_id: int | None = None,
     keyboard: ReplyKeyboardMarkup | None = None,
+    markdown: bool = True,
 ) -> int | None:
     """
     Отправка сообщений по указанному id пользователя.\n
@@ -26,7 +27,10 @@ async def safe_send_message(
     )
     try:
         sent_message = await config.bot.send_message(
-            chat_id, message, reply_markup=keyboard,
+            chat_id,
+            message,
+            reply_markup=keyboard,
+            parse_mode='Markdown' if markdown else None,
         )
     except (TelegramNetworkError, TelegramServerError):
         config.logger.exception('%s\n\nTelegram недоступен', error_message)
@@ -82,21 +86,24 @@ def get_indexes(text: str) -> list[int]:
             else:
                 indexes.append(int(index_range))
     except ValueError as error:
-        asyncio.create_task(safe_send_message(config.MY_ID, str(error)))
+        asyncio.create_task(
+            safe_send_message(config.MY_ID, str(error), markdown=False),
+        )
         raise
     return indexes
 
 
 def get_content_for_repr(content: list[str]) -> list[str]:
     """
-    Нумерует контент и упаковывает его в сообщения
-    с учетом лимита символов Telegram для одного сообщения.
+    Нумерует контент, делает его элементы копируемыми с помощью разметки ``
+    и упаковывает в сообщения с учетом лимита символов Telegram
+    для одного сообщения.
     """
     chunks: list[str] = []
     chunk: list[str] = []
     symbol_count = 0
     for index, line in enumerate(content, start=1):
-        line = f'{index}. {line}'
+        line = f'{index}. `{line}`'
         line_length = len(line)
         if symbol_count + line_length > config.TELEGRAM_MESSAGE_SYMBOL_LIMIT:
             chunks.append(''.join(chunk))

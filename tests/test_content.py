@@ -39,4 +39,4 @@ def test_delete_content(mock_write_in_file: MagicMock, filepath: str) -> None:
     mock_write_in_file.assert_called_once_with(
         filepath, mode='w', content=['test1'],
     )
-    assert deleted_content == ['1. test2']
+    assert deleted_content == ['1. `test2`']
