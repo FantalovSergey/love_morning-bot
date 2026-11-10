@@ -1,8 +1,7 @@
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from love_bot.core import config
 from love_bot.core.exceptions import (
     EmptyRequestError, TooLongContentMessageError,
 )
@@ -11,32 +10,29 @@ from love_bot.validators import (
 )
 
 
-@pytest.mark.asyncio
-@patch('love_bot.validators.safe_send_message', autospec=True)
-async def test_validate_request_text_is_not_none(
-    mock_safe_send: AsyncMock,
+@patch('love_bot.validators.telegram_logging')
+def test_validate_request_text_is_not_none(
+    mock_logging: MagicMock,
 ) -> None:
     with pytest.raises(EmptyRequestError):
         validate_request_text_is_not_none(request_text=None)
-    mock_safe_send.assert_called_once_with(config.MY_ID, message=ANY)
+    mock_logging.assert_called_once()
 
 
-@pytest.mark.asyncio
-@patch('love_bot.validators.safe_send_message', autospec=True)
-async def test_validate_writing_request(
-    mock_safe_send: AsyncMock, too_long_message: str, symbol_exceeding: int,
+@patch('love_bot.validators.telegram_logging')
+def test_validate_writing_request(
+    mock_logging: MagicMock, too_long_message: str, symbol_exceeding: int,
 ) -> None:
     with pytest.raises(TooLongContentMessageError) as exception_info:
         validate_writing_request(too_long_message)
     assert exception_info.value.symbol_limit_exceeding == symbol_exceeding
-    mock_safe_send.assert_called_once_with(config.MY_ID, message=ANY)
+    mock_logging.assert_called_once()
 
 
-@pytest.mark.asyncio
-@patch('love_bot.validators.safe_send_message', autospec=True)
-async def test_validate_writing_request_text_is_not_none(
-    mock_validate_is_not_none: MagicMock,
+@patch('love_bot.validators.telegram_logging')
+def test_validate_writing_request_text_is_not_none(
+    mock_logging: MagicMock,
 ) -> None:
     with pytest.raises(EmptyRequestError):
         validate_writing_request(request_text=None)
-    mock_validate_is_not_none.assert_called_once()
+    mock_logging.assert_called_once()

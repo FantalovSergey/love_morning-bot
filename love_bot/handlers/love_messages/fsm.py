@@ -14,7 +14,7 @@ async def delete_love_messages(request: Message, state: FSMContext) -> None:
     """
     Удаление любовных сообщений из файла по указанным индексам.
     """
-    deleted_love_messages = delete_content(
+    deleted_love_messages = await delete_content(
         config.LOVE_MESSAGES_FILEPATH,
         validate_request_text_is_not_none(request.text),
     )

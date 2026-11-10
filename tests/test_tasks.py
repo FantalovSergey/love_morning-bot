@@ -13,10 +13,10 @@ from tests.exeptions import StopTest
 
 
 @pytest.mark.asyncio
-@patch('love_bot.tasks.retrieve_content', autospec=True)
 @patch('love_bot.tasks.safe_send_message', autospec=True)
+@patch('love_bot.tasks.retrieve_content', autospec=True)
 async def test_WISH_good_morning(
-    mock_safe_send: AsyncMock, mock_retrieve_content: MagicMock,
+    mock_retrieve_content: AsyncMock, mock_safe_send: AsyncMock,
 ) -> None:
     with (
         patch('love_bot.tasks.asyncio.sleep', side_effect=[None, StopTest]),
@@ -45,15 +45,15 @@ async def test_WISH_good_morning(
         ),
     )
 )
-@patch('love_bot.tasks.datetime', wraps=datetime)
 @patch(
     'love_bot.tasks.asyncio.sleep',
     autospec=True,
     side_effect=[None, StopTest],
 )
+@patch('love_bot.tasks.datetime', wraps=datetime)
 async def test_wish_good_MORNING(
-    mock_sleep: AsyncMock,
     mock_datetime: MagicMock,
+    mock_sleep: AsyncMock,
     now: datetime,
     expected_delay: int,
 ) -> None:
@@ -64,17 +64,18 @@ async def test_wish_good_MORNING(
         pytest.raises(StopTest),
     ):
         await wish_good_morning()
+    mock_datetime.now.assert_called_once_with(config.TZ)
     mock_sleep.assert_has_awaits((call(expected_delay), call(1)))
 
 
 @pytest.mark.asyncio
-@patch('love_bot.tasks.asyncio.sleep', autospec=True)
-@patch('love_bot.tasks.config.bot.delete_messages', autospec=True)
 @patch('love_bot.tasks.config.bot.edit_message_text', autospec=True)
+@patch('love_bot.tasks.config.bot.delete_messages', autospec=True)
+@patch('love_bot.tasks.asyncio.sleep', autospec=True)
 async def test_delete_one_message_after_content_showing(
-    mock_edit_message: AsyncMock,
-    mock_delete_messages: AsyncMock,
     mock_sleep: AsyncMock,
+    mock_delete_messages: AsyncMock,
+    mock_edit_message: AsyncMock,
     chat_id: int,
     sent_message_id: int,
 ) -> None:
@@ -89,19 +90,19 @@ async def test_delete_one_message_after_content_showing(
 
 
 @pytest.mark.asyncio
-@patch('love_bot.tasks.asyncio.sleep', autospec=True)
-@patch('love_bot.tasks.config.bot.delete_messages', autospec=True)
 @patch('love_bot.tasks.config.bot.edit_message_text', autospec=True)
+@patch('love_bot.tasks.config.bot.delete_messages', autospec=True)
 async def test_delete_many_messages_after_content_showing(
-    mock_edit_message: AsyncMock,
     mock_delete_messages: AsyncMock,
-    mock_sleep: AsyncMock,
+    mock_edit_message: AsyncMock,
     chat_id: int,
     sent_message_ids: list[int],
 ) -> None:
     copied_message_ids = sent_message_ids.copy()
-    await delete_messages_after_content_showing(chat_id, copied_message_ids)
-    mock_sleep.assert_awaited_once_with(config.CONTENT_SHOWING_PERIOD)
+    with patch('love_bot.tasks.asyncio.sleep'):
+        await delete_messages_after_content_showing(
+            chat_id, copied_message_ids,
+        )
     mock_delete_messages.assert_awaited_once_with(
         chat_id, sent_message_ids[1:],
     )
@@ -116,13 +117,13 @@ async def test_delete_many_messages_after_content_showing(
 @patch(
     'love_bot.tasks.asyncio.sleep', autospec=True, side_effect=StopTest,
 )
+@patch('love_bot.tasks.telegram_logging', autospec=True)
 @patch.object(config.logger, 'exception')
-@patch('love_bot.tasks.safe_send_message', autospec=True)
 @patch('love_bot.tasks.config.bot.send_document', autospec=True)
 async def test_send_backups(
     mock_send_doc: AsyncMock,
-    mock_send_message: AsyncMock,
     mock_logger: MagicMock,
+    mock_telegram_logging: MagicMock,
     mock_sleep: AsyncMock,
     message: Message,
     text_message: str,
@@ -133,15 +134,12 @@ async def test_send_backups(
     with pytest.raises(StopTest):
         await send_backups()
     mock_logger.assert_called_once()
-    assert mock_send_message.await_count == 2
-    chat_ids: list[int] = []
-    text_messages: list[str] = []
-    for call_args in mock_send_message.call_args_list:
-        chat_ids.append(call_args.args[0])
-        text_messages.append(call_args.args[1])
-    assert chat_ids[0] == chat_ids[1] == config.MY_ID
+    assert mock_telegram_logging.call_count == 2
+    error_messages = [
+        call_args.args[0] for call_args in mock_telegram_logging.call_args_list
+    ]
     # Первый в очереди на отправку файл с сообщениями,
     # поэтому в первом сообщении об ошибке должен быть хотя бы путь к файлу
-    assert config.LOVE_MESSAGES_FILEPATH in text_messages[0]
-    assert text_messages[1] == text_message
+    assert config.LOVE_MESSAGES_FILEPATH in error_messages[0]
+    assert error_messages[1] == text_message
     mock_sleep.assert_called_once_with(config.BACKUP_PERIOD)

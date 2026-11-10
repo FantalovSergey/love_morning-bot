@@ -11,7 +11,7 @@ from love_bot.validators import validate_writing_request
 @simple_messages_router.message(F.chat.id == config.MY_ID)
 async def write_love_message(request: Message) -> None:
     """Запись любовного сообщения в файл."""
-    write_content(
+    await write_content(
         config.LOVE_MESSAGES_FILEPATH, validate_writing_request(request.text),
     )
     await safe_send_message(config.MY_ID, templates.CONTENT_IS_SAVED)

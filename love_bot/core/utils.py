@@ -17,10 +17,21 @@ async def safe_send_message(
     """
     Отправка сообщений по указанному id пользователя.\n
     Логирование исключений. Пересылка мне сообщения бота, отправленного не мне,
-    а также полученного ботом сообщения
-    при наличии соответствующего аргумента.\n
+    а также полученного ботом сообщения при наличии соответствующего аргумента.
+    Если markdown = True (по умолчанию), сообщение парсится
+    в разметке MarkdownV2; символы из списка неиспользуемых экранируются\n
     Возвращает id отправленного сообщения.
     """
+    if markdown:
+        message = ''.join(
+            [
+                f'\\{symbol}' if symbol in config.UNUSED_MARKDOWN_SYMBOLS
+                else symbol for symbol in message
+            ]
+        )
+        parse_mode = 'MarkdownV2'
+    else:
+        parse_mode = None
     error_message = (
         f'Сообщение "{message}" НЕ ОТПРАВЛЕНО '
         f'в чат {chat_id}, request_message_id = {request_message_id}'
@@ -30,7 +41,7 @@ async def safe_send_message(
             chat_id,
             message,
             reply_markup=keyboard,
-            parse_mode='Markdown' if markdown else None,
+            parse_mode=parse_mode,
         )
     except (TelegramNetworkError, TelegramServerError):
         config.logger.exception('%s\n\nTelegram недоступен', error_message)
@@ -70,32 +81,16 @@ async def safe_send_message(
     return sent_message.message_id
 
 
-def get_indexes(text: str) -> list[int]:
-    """
-    Преобразование строки с диапазонами в список индексов.\n
-    Бросает и логирует ValueError в случае некорректного ввода диапазонов.
-    """
-    index_ranges = text.split(', ')
-    indexes: list[int] = []
-    try:
-        for index_range in index_ranges:
-            if '-' in index_range:
-                start_index, stop_index = index_range.split('-')
-                for index in range(int(start_index), int(stop_index) + 1):
-                    indexes.append(index)
-            else:
-                indexes.append(int(index_range))
-    except ValueError as error:
-        asyncio.create_task(
-            safe_send_message(config.MY_ID, str(error), markdown=False),
-        )
-        raise
-    return indexes
+def telegram_logging(message: str) -> None:
+    """Логирование в л/с мне."""
+    asyncio.create_task(
+        safe_send_message(config.MY_ID, message, markdown=False),
+    )
 
 
 def get_content_for_repr(content: list[str]) -> list[str]:
     """
-    Нумерует контент, делает его элементы копируемыми с помощью разметки ``
+    Нумерует контент, делает его элементы копируемыми
     и упаковывает в сообщения с учетом лимита символов Telegram
     для одного сообщения.
     """
@@ -113,6 +108,27 @@ def get_content_for_repr(content: list[str]) -> list[str]:
         symbol_count += line_length
     chunks.append(''.join(chunk))
     return chunks
+
+
+def get_indexes(text: str) -> list[int]:
+    """
+    Преобразование строки с диапазонами в список индексов.\n
+    Бросает и логирует ValueError в случае некорректного ввода диапазонов.
+    """
+    index_ranges = text.split(', ')
+    indexes: list[int] = []
+    try:
+        for index_range in index_ranges:
+            if '-' in index_range:
+                start_index, stop_index = index_range.split('-')
+                for index in range(int(start_index), int(stop_index) + 1):
+                    indexes.append(index)
+            else:
+                indexes.append(int(index_range))
+    except ValueError as error:
+        telegram_logging(str(error))
+        raise
+    return indexes
 
 
 def get_message_with_right_greeting(message: str) -> str:

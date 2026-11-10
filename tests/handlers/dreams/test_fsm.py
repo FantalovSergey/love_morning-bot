@@ -37,6 +37,7 @@ async def test_handle_invalid_dream_writing_requests(
     get_dispatcher_with_state: DispatcherFactory,
     bot: Bot,
     make_update: UpdateFactory,
+    text_message: str,
     received_message_id: int,
     exception: Exception,
     expected_response: str,
@@ -47,11 +48,15 @@ async def test_handle_invalid_dream_writing_requests(
     with (
         patch(
             'love_bot.handlers.dreams.fsm.validate_writing_request',
+            new_callable=MagicMock,
             side_effect=exception,
-        ),
-        pytest.raises(Exception),
+        ) as mock_validate,
+        pytest.raises(ValueError),
     ):
-        await dispatcher.feed_update(bot, make_update(config.ARINA_ID))
+        await dispatcher.feed_update(
+            bot, make_update(config.ARINA_ID, text_message),
+        )
+    mock_validate.assert_called_once_with(text_message)
     await assert_state(
         dispatcher,
         bot,
@@ -95,11 +100,11 @@ async def test_write_dream_unsuccessfully(
 
 
 @pytest.mark.asyncio
-@patch('love_bot.handlers.dreams.fsm.write_content', autospec=True)
 @patch('love_bot.handlers.dreams.fsm.safe_send_message', autospec=True)
+@patch('love_bot.handlers.dreams.fsm.write_content', autospec=True)
 async def test_write_dream_successfully(
+    mock_write_content: AsyncMock,
     mock_safe_send: AsyncMock,
-    mock_write_content: MagicMock,
     get_dispatcher_with_state: DispatcherFactory,
     bot: Bot,
     make_update: UpdateFactory,
@@ -109,11 +114,13 @@ async def test_write_dream_successfully(
     dispatcher = await get_dispatcher_with_state(
         config.ARINA_ID, state=DreamWriting.dream_waiting,
     )
-    await dispatcher.feed_update(bot, make_update(config.ARINA_ID))
-    await assert_state(dispatcher, bot, config.ARINA_ID, expected_state=None)
-    mock_write_content.assert_called_once_with(
+    await dispatcher.feed_update(
+        bot, make_update(config.ARINA_ID, text_message),
+    )
+    mock_write_content.assert_awaited_once_with(
         config.DREAMS_FILEPATH, text_message, timestamp=True,
     )
+    await assert_state(dispatcher, bot, config.ARINA_ID, expected_state=None)
     mock_safe_send.assert_awaited_once_with(
         config.ARINA_ID,
         templates.CONTENT_IS_SAVED,
@@ -150,24 +157,30 @@ async def test_forward_message_when_deleting_dreams(
 
 @pytest.mark.asyncio
 @patch('love_bot.handlers.dreams.fsm.safe_send_message', autospec=True)
+@patch(
+    'love_bot.handlers.dreams.fsm.validate_request_text_is_not_none',
+    autospec=True,
+    side_effect=EmptyRequestError(),
+)
 async def test_handle_empty_dreams_deleting_request(
+    mock_validate: MagicMock,
     mock_safe_send: AsyncMock,
     get_dispatcher_with_state: DispatcherFactory,
     bot: Bot,
     make_update: UpdateFactory,
+    text_message: str,
 ) -> None:
     dispatcher = await get_dispatcher_with_state(
         config.ARINA_ID, state=DreamsDeleting.indexes_waiting,
     )
     with (
         patch('love_bot.handlers.dreams.fsm.config.bot.forward_message'),
-        patch(
-            'love_bot.handlers.dreams.fsm.validate_request_text_is_not_none',
-            side_effect=EmptyRequestError(),
-        ),
-        pytest.raises(Exception),
+        pytest.raises(EmptyRequestError),
     ):
-        await dispatcher.feed_update(bot, make_update(config.ARINA_ID))
+        await dispatcher.feed_update(
+            bot, make_update(config.ARINA_ID, text_message),
+        )
+    mock_validate.assert_called_once_with(text_message)
     await assert_state(
         dispatcher,
         bot,
@@ -175,7 +188,7 @@ async def test_handle_empty_dreams_deleting_request(
         expected_state=DreamsDeleting.indexes_waiting,
     )
     mock_safe_send.assert_awaited_once_with(
-        config.ARINA_ID, templates.DELETE_DREAMS_REQUEST_IS_INVALID,
+        config.ARINA_ID, templates.DELETING_DREAMS_REQUEST_IS_INVALID,
     )
 
 
@@ -184,7 +197,7 @@ async def test_handle_empty_dreams_deleting_request(
     ('exception', 'expected_response'),
     (
         (NoContentForDeletingError(), templates.OUT_OF_RANGE_INDEXES_ERROR),
-        (ValueError(), templates.DELETE_DREAMS_REQUEST_IS_INVALID),
+        (ValueError(), templates.DELETING_DREAMS_REQUEST_IS_INVALID),
         (EmptyFileError(), templates.DREAMS_FILE_ERROR),
         (OSError(), templates.DREAMS_FILE_ERROR)
     ),
@@ -220,11 +233,11 @@ async def test_delete_dreams_unsuccessfully(
 
 
 @pytest.mark.asyncio
-@patch('love_bot.handlers.dreams.fsm.delete_content', autospec=True)
 @patch('love_bot.handlers.dreams.fsm.safe_send_message', autospec=True)
+@patch('love_bot.handlers.dreams.fsm.delete_content', autospec=True)
 async def test_delete_dreams_successfully(
+    mock_delete_content: AsyncMock,
     mock_safe_send: AsyncMock,
-    mock_delete_content: MagicMock,
     get_dispatcher_with_state: DispatcherFactory,
     bot: Bot,
     make_update: UpdateFactory,
@@ -236,11 +249,13 @@ async def test_delete_dreams_successfully(
         config.ARINA_ID, state=DreamsDeleting.indexes_waiting,
     )
     with patch('love_bot.handlers.dreams.fsm.config.bot.forward_message'):
-        await dispatcher.feed_update(bot, make_update(config.ARINA_ID))
-    await assert_state(dispatcher, bot, config.ARINA_ID, expected_state=None)
-    mock_delete_content.assert_called_once_with(
+        await dispatcher.feed_update(
+            bot, make_update(config.ARINA_ID, text_message),
+        )
+    mock_delete_content.assert_awaited_once_with(
         config.DREAMS_FILEPATH, text_message,
     )
+    await assert_state(dispatcher, bot, config.ARINA_ID, expected_state=None)
     mock_safe_send.assert_has_awaits(
         [call(config.ARINA_ID, message) for message in repr_content],
     )

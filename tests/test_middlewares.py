@@ -18,7 +18,7 @@ async def test_handle_message_from_unknown_user(
     chat_id: int,
     received_message_id: int,
 ) -> None:
-    await dispatcher.feed_update(bot, make_update())
+    await dispatcher.feed_update(bot, make_update(chat_id))
     await assert_state(dispatcher, bot, chat_id, expected_state=None)
     mock_safe_send.assert_awaited_once_with(
         chat_id, templates.MESSAGE_FOR_UNKNOWN_USERS, received_message_id,

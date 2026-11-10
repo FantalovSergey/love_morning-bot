@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, call, MagicMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from aiogram import Bot
@@ -39,11 +39,11 @@ async def test_delete_love_messages_unsuccessfully(
 
 
 @pytest.mark.asyncio
-@patch('love_bot.handlers.love_messages.fsm.delete_content')
 @patch('love_bot.handlers.love_messages.fsm.safe_send_message', autospec=True)
+@patch('love_bot.handlers.love_messages.fsm.delete_content', autospec=True)
 async def test_delete_love_messages_successfully(
+    mock_delete_content: AsyncMock,
     mock_safe_send: AsyncMock,
-    mock_delete_content: MagicMock,
     get_dispatcher_with_state: DispatcherFactory,
     bot: Bot,
     make_update: UpdateFactory,
@@ -54,11 +54,11 @@ async def test_delete_love_messages_successfully(
     dispatcher = await get_dispatcher_with_state(
         config.MY_ID, state=LoveMessagesDeleting.indexes_waiting,
     )
-    await dispatcher.feed_update(bot, make_update(config.MY_ID))
-    await assert_state(dispatcher, bot, config.MY_ID, expected_state=None)
-    mock_delete_content.assert_called_once_with(
+    await dispatcher.feed_update(bot, make_update(config.MY_ID, text_message))
+    mock_delete_content.assert_awaited_once_with(
         config.LOVE_MESSAGES_FILEPATH, text_message,
     )
+    await assert_state(dispatcher, bot, config.MY_ID, expected_state=None)
     mock_safe_send.assert_has_awaits(
         [call(config.MY_ID, message) for message in repr_content],
     )

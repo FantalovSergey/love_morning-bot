@@ -7,7 +7,7 @@ from aiogram.types import FSInputFile
 
 from love_bot.content import retrieve_content
 from love_bot.core import config, templates
-from love_bot.core.utils import safe_send_message
+from love_bot.core.utils import safe_send_message, telegram_logging
 
 
 async def wish_good_morning() -> NoReturn:
@@ -19,7 +19,8 @@ async def wish_good_morning() -> NoReturn:
         # до момента отправки, которая произойдёт на следующий день
         await asyncio.sleep(delta.seconds)
         await safe_send_message(
-            config.ARINA_ID, retrieve_content(config.LOVE_MESSAGES_FILEPATH),
+            config.ARINA_ID,
+            await retrieve_content(config.LOVE_MESSAGES_FILEPATH),
         )
         await asyncio.sleep(1)
 
@@ -55,20 +56,12 @@ async def send_backups() -> NoReturn:
             except Exception as error:
                 error_message = str(error).lower()
                 if f'errno {errno.ENOENT}' in error_message:
-                    await safe_send_message(
-                        config.MY_ID,
-                        f'Отсутствует файл {path}',
-                        markdown=False,
-                    )
+                    telegram_logging(f'Отсутствует файл {path}')
                 elif 'file must be non-empty' in error_message:
-                    await safe_send_message(
-                        config.MY_ID, f'Файл {path} пуст', markdown=False,
-                    )
+                    telegram_logging(f'Файл {path} пуст')
                 else:
                     config.logger.exception(
                         'Ошибка при создании бэкапа для файла %s', path,
                     )
-                    await safe_send_message(
-                        config.MY_ID, str(error), markdown=False,
-                    )
+                    telegram_logging(str(error))
         await asyncio.sleep(config.BACKUP_PERIOD)

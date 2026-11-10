@@ -23,11 +23,11 @@ EMPTY = 'пуст'
         (safe_write_in_file, 3 * (ANY,), WRITING)
     ),
 )
-@patch('love_bot.files.safe_send_message', autospec=True)
+@patch('love_bot.files.telegram_logging')
 @patch.object(config.logger, 'exception')
 async def test_safe_open_file_with_not_retryable_os_error(
     mock_logger: MagicMock,
-    mock_safe_send: AsyncMock,
+    mock_telegram_logging: MagicMock,
     exception: Exception,
     tested_func: Callable,
     args: tuple,
@@ -37,14 +37,12 @@ async def test_safe_open_file_with_not_retryable_os_error(
         patch('builtins.open', side_effect=exception),
         pytest.raises(OSError),
     ):
-        tested_func(*args)
+        await tested_func(*args)
     if not isinstance(exception, FileNotFoundError):
         mock_logger.assert_called_once()
-    mock_safe_send.assert_called_once()
-    chat_id, error_message = mock_safe_send.call_args.args
-    assert chat_id == config.MY_ID
+    mock_telegram_logging.assert_called_once()
+    error_message = mock_telegram_logging.call_args.args[0]
     assert phrase_is_contained in error_message.lower()
-    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
 @pytest.mark.asyncio
@@ -59,11 +57,13 @@ async def test_safe_open_file_with_not_retryable_os_error(
         (safe_write_in_file, 3 * (ANY,), WRITING)
     ),
 )
-@patch('love_bot.files.safe_send_message', autospec=True)
+@patch('love_bot.files.telegram_logging', autospec=True)
+@patch('love_bot.files.asyncio.sleep', autospec=True)
 @patch('love_bot.files.config.logger')
 async def test_safe_open_file_with_retryable_os_error(
     mock_logger: MagicMock,
-    mock_safe_send: AsyncMock,
+    mock_sleep: AsyncMock,
+    mock_telegram_logging: MagicMock,
     exception: Exception,
     tested_func: Callable,
     args: tuple,
@@ -73,40 +73,38 @@ async def test_safe_open_file_with_retryable_os_error(
         patch('builtins.open', side_effect=exception),
         pytest.raises(OSError),
     ):
-        tested_func(*args)
-    assert len(mock_logger.method_calls) == config.FILE_OPENING_ATTEMPTS_LIMIT
-    mock_safe_send.assert_called_once()
-    chat_id, error_message = mock_safe_send.call_args.args
-    assert chat_id == config.MY_ID
+        await tested_func(*args)
+    assert len(mock_logger.method_calls) == config.OPENING_ATTEMPTS_LIMIT
+    assert mock_sleep.await_count == config.OPENING_ATTEMPTS_LIMIT - 1
+    mock_telegram_logging.assert_called_once()
+    error_message = mock_telegram_logging.call_args.args[0]
     assert phrase_is_contained in error_message.lower()
-    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
 @pytest.mark.asyncio
-@patch('love_bot.files.safe_send_message', autospec=True)
+@patch('love_bot.files.telegram_logging')
 @patch('builtins.open', new_callable=mock_open)
 async def test_safe_read_empty_file(
-    mock_open_file: MagicMock, mock_safe_send: AsyncMock, filepath: str,
+    mock_open_file: MagicMock, mock_telegram_logging: MagicMock, filepath: str,
 ) -> None:
     with pytest.raises(EmptyFileError):
-        safe_read_file(filepath)
+        await safe_read_file(filepath)
     mock_open_file.assert_called_once_with(filepath, encoding='utf-8')
     mock_open_file().readlines.assert_called_once()
-    mock_safe_send.assert_called_once()
-    chat_id, error_message = mock_safe_send.call_args.args
-    assert chat_id == config.MY_ID
+    mock_telegram_logging.assert_called_once()
+    error_message = mock_telegram_logging.call_args.args[0]
     assert EMPTY in error_message.lower()
-    assert mock_safe_send.call_args.kwargs['markdown'] is False
 
 
+@pytest.mark.asyncio
 @patch('builtins.open', new_callable=mock_open)
-def test_safe_write_file_one_time(
+async def test_safe_write_file_one_time(
     mock_open_file: MagicMock,
     filepath: str,
     file_open_mode: str,
     file_content: str,
 ) -> None:
-    safe_write_in_file(filepath, file_open_mode, file_content)
+    await safe_write_in_file(filepath, file_open_mode, file_content)
     mock_open_file.assert_called_once_with(
         filepath, file_open_mode, encoding='utf-8',
     )

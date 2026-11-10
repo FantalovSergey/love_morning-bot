@@ -1,5 +1,4 @@
 """Работа с любовными сообщениями и снами в распоряжении бота."""
-import asyncio
 from datetime import datetime
 from random import choice
 
@@ -9,32 +8,34 @@ from love_bot.core.utils import (
     get_content_for_repr,
     get_date_with_month_written_by_letters,
     get_indexes,
-    safe_send_message,
+    telegram_logging,
 )
 from love_bot.files import safe_read_file, safe_write_in_file
 
 
-def retrieve_content(filepath: str) -> str:
+async def retrieve_content(filepath: str) -> str:
     """
-    Вовзращает один элемент контента либо извинения,
-    если есть проблемы с файлом.
+    Вовзращает один элемент контента в форме скрытого сообщения (спойлера),
+    либо извинения, если есть проблемы с файлом.
     """
     try:
-        return choice(safe_read_file(filepath))
+        return f'||{choice(await safe_read_file(filepath))}||'
     except (EmptyFileError, OSError):
         return templates.LOVE_MESSAGE_FILE_ERROR
 
 
-def list_content(filepath: str) -> list[str]:
+async def list_content(filepath: str) -> list[str]:
     """
     Возвращает контент в формате, подходящем для отправки в Telegram:
     с нумерацией и с учётом лимита символов для одного сообщения.\n
     Бросает исключения: EmptyFileError; OSError при ошибках чтения файла.
     """
-    return get_content_for_repr(safe_read_file(filepath))
+    return get_content_for_repr(await safe_read_file(filepath))
 
 
-def write_content(filepath: str, text: str, timestamp: bool = False) -> None:
+async def write_content(
+    filepath: str, text: str, timestamp: bool = False,
+ ) -> None:
     """
     Запись контента в файл.\n
     В конце файла ставится символ переноса строки.
@@ -48,10 +49,10 @@ def write_content(filepath: str, text: str, timestamp: bool = False) -> None:
             now.strftime('%d.%m.%Y г. %H:%M'),
         )
         line.append(f'Добавлен: {created_at}')
-    safe_write_in_file(filepath, 'a', (' '.join(line) + '\n',))
+    await safe_write_in_file(filepath, 'a', (' '.join(line) + '\n',))
 
 
-def delete_content(filepath: str, index_ranges: str) -> list[str]:
+async def delete_content(filepath: str, index_ranges: str) -> list[str]:
     """
     Удаление контента из файлов по индексам.\n
     Бросает исключения: EmptyFileError; NoContentForDeletingError;
@@ -63,7 +64,7 @@ def delete_content(filepath: str, index_ranges: str) -> list[str]:
     indexes_for_deleting = get_indexes(index_ranges)
     undeleted_content: list[str] = []
     deleted_content: list[str] = []
-    content = safe_read_file(filepath)
+    content = await safe_read_file(filepath)
     for index, line in enumerate(content, start=1):
         if index in indexes_for_deleting:
             deleted_content.append(line)
@@ -74,7 +75,7 @@ def delete_content(filepath: str, index_ranges: str) -> list[str]:
             'Ошибка удаления контента. '
             'По указанным индексам невозможно удалить ни один элемент'
         )
-        asyncio.create_task(safe_send_message(config.MY_ID, error_message))
+        telegram_logging(error_message)
         raise NoContentForDeletingError(error_message)
-    safe_write_in_file(filepath, 'w', undeleted_content)
+    await safe_write_in_file(filepath, 'w', undeleted_content)
     return get_content_for_repr(deleted_content)

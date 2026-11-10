@@ -20,7 +20,7 @@ async def send_cuteness_immediately(request: Message) -> None:
     await safe_send_message(
         config.ARINA_ID,
         get_message_with_right_greeting(
-            retrieve_content(config.LOVE_MESSAGES_FILEPATH),
+            await retrieve_content(config.LOVE_MESSAGES_FILEPATH),
         ),
         request.message_id,
     )
@@ -36,12 +36,12 @@ async def show_all_love_messages(request: Message) -> None:
     if request.chat.id == config.ARINA_ID:
         await safe_send_message(
             config.ARINA_ID,
-            templates.SHOW_ARINA_ALL_LOVE_MESSAGE_RESPONSE,
+            templates.SHOWING_ARINA_ALL_LOVE_MESSAGE_RESPONSE,
             request.message_id,
         )
         return
     message_ids: list[int] = []
-    for message in list_content(config.LOVE_MESSAGES_FILEPATH):
+    for message in await list_content(config.LOVE_MESSAGES_FILEPATH):
         message_id = await safe_send_message(config.MY_ID, message)
         if message_id is None:
             break
@@ -62,12 +62,12 @@ async def start_love_messages_deleting(
     if request.chat.id == config.ARINA_ID:
         await safe_send_message(
             config.ARINA_ID,
-            templates.DELETE_LOVE_MESSAGES_BY_ARINA_RESPONSE,
+            templates.DELETING_LOVE_MESSAGES_BY_ARINA_RESPONSE,
             request.message_id,
         )
         return
     message_ids: list[int] = []
-    for message in list_content(config.LOVE_MESSAGES_FILEPATH):
+    for message in await list_content(config.LOVE_MESSAGES_FILEPATH):
         message_id = await safe_send_message(config.MY_ID, message)
         if message_id is None:
             break

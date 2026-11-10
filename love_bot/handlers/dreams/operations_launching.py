@@ -24,7 +24,7 @@ async def show_all_dreams(request: Message) -> None:
             message_id=request.message_id,
         )
     try:
-        messages = list_content(config.DREAMS_FILEPATH)
+        messages = await list_content(config.DREAMS_FILEPATH)
     except EmptyFileError:
         if request.chat.id == config.ARINA_ID:
             await safe_send_message(config.ARINA_ID, templates.FILE_IS_EMPTY)
@@ -74,7 +74,7 @@ async def start_dreams_deleting(request: Message, state: FSMContext) -> None:
         message_id=request.message_id,
     )
     try:
-        messages = list_content(config.DREAMS_FILEPATH)
+        messages = await list_content(config.DREAMS_FILEPATH)
     except EmptyFileError:
         await safe_send_message(config.ARINA_ID, templates.NOTHING_TO_DELETE)
         raise

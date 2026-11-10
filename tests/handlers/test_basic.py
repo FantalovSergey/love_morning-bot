@@ -73,5 +73,5 @@ async def test_cancel(
     )
     await assert_state(dispatcher, bot, chat_id, expected_state=None)
     mock_safe_send.assert_awaited_once_with(
-        chat_id, templates.CANCEL_RESPONSE, received_message_id, keyboard,
+        chat_id, templates.CANCELATION_RESPONSE, received_message_id, keyboard,
     )

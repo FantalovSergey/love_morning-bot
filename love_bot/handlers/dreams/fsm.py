@@ -24,7 +24,7 @@ async def write_dream(request: Message, state: FSMContext) -> None:
     Присутствует ограничение количества символов.
     """
     try:
-        write_content(
+        await write_content(
             config.DREAMS_FILEPATH,
             validate_writing_request(request.text),
             timestamp=True,
@@ -66,7 +66,7 @@ async def delete_dreams(request: Message, state: FSMContext) -> None:
         message_id=request.message_id,
     )
     try:
-        deleted_dreams = delete_content(
+        deleted_dreams = await delete_content(
             config.DREAMS_FILEPATH,
             validate_request_text_is_not_none(request.text),
         )
@@ -81,7 +81,7 @@ async def delete_dreams(request: Message, state: FSMContext) -> None:
     except ValueError:
         await safe_send_message(
             config.ARINA_ID,
-            templates.DELETE_DREAMS_REQUEST_IS_INVALID,
+            templates.DELETING_DREAMS_REQUEST_IS_INVALID,
         )
         raise
     await state.clear()

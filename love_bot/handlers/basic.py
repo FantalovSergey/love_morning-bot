@@ -36,7 +36,7 @@ async def cancel(request: Message, state: FSMContext) -> None:
     await state.clear()
     await safe_send_message(
         request.chat.id,
-        templates.CANCEL_RESPONSE,
+        templates.CANCELATION_RESPONSE,
         request.message_id,
         (
             keyboards.Arina_keyboard if request.chat.id == config.ARINA_ID else

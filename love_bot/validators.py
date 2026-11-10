@@ -1,10 +1,8 @@
-import asyncio
-
 from love_bot.core import config
 from love_bot.core.exceptions import (
     EmptyRequestError, TooLongContentMessageError,
 )
-from love_bot.core.utils import safe_send_message
+from love_bot.core.utils import telegram_logging
 
 
 def validate_request_text_is_not_none(request_text: str | None) -> str:
@@ -14,7 +12,7 @@ def validate_request_text_is_not_none(request_text: str | None) -> str:
     """
     if request_text is None:
         error_message = 'В запросе отсутствует текст'
-        asyncio.create_task(safe_send_message(config.MY_ID, error_message))
+        telegram_logging(error_message)
         raise EmptyRequestError(error_message)
     return request_text
 
@@ -32,8 +30,6 @@ def validate_writing_request(request_text: str | None) -> str:
             'Слишком длинное сообщение с контентом для записи в файл',
             symbol_limit_exceeding=symbol_exceeding,
         )
-        asyncio.create_task(
-            safe_send_message(config.MY_ID, str(long_message_error)),
-        )
+        telegram_logging(str(long_message_error))
         raise long_message_error
     return request_text

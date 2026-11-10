@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, call, MagicMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import pytest
 from aiogram import Bot, Dispatcher
@@ -122,7 +122,6 @@ async def test_show_me_all_dreams_unsuccessfully(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('chat_id', (config.ARINA_ID, config.MY_ID))
-@patch('love_bot.handlers.dreams.operations_launching.list_content')
 @patch(
     (
         'love_bot.handlers.dreams.operations_launching.'
@@ -134,10 +133,14 @@ async def test_show_me_all_dreams_unsuccessfully(
     'love_bot.handlers.dreams.operations_launching.safe_send_message',
     autospec=True,
 )
+@patch(
+    'love_bot.handlers.dreams.operations_launching.list_content',
+    autospec=True,
+)
 async def test_show_all_dreams_successfully(
+    mock_list_content: AsyncMock,
     mock_safe_send: AsyncMock,
     mock_delete_messages: AsyncMock,
-    mock_list_content: MagicMock,
     dispatcher: Dispatcher,
     bot: Bot,
     make_update: UpdateFactory,
@@ -156,6 +159,7 @@ async def test_show_all_dreams_successfully(
         await dispatcher.feed_update(
             bot, make_update(chat_id, text_message=keyboards.SHOW_DREAMS),
         )
+    mock_list_content.assert_awaited_once_with(config.DREAMS_FILEPATH)
     await assert_state(dispatcher, bot, chat_id, expected_state=None)
     mock_safe_send.assert_has_awaits(
         [call(chat_id, message) for message in repr_content],
@@ -236,7 +240,6 @@ async def test_start_dreams_deleting_unsuccessfully(
 
 
 @pytest.mark.asyncio
-@patch('love_bot.handlers.dreams.operations_launching.list_content')
 @patch(
     (
         'love_bot.handlers.dreams.operations_launching.'
@@ -248,10 +251,14 @@ async def test_start_dreams_deleting_unsuccessfully(
     'love_bot.handlers.dreams.operations_launching.safe_send_message',
     autospec=True,
 )
+@patch(
+    'love_bot.handlers.dreams.operations_launching.list_content',
+    autospec=True,
+)
 async def test_show_dreams_before_deleting(
+    mock_list_content: AsyncMock,
     mock_safe_send: AsyncMock,
     mock_delete_messages: AsyncMock,
-    mock_list_content: MagicMock,
     dispatcher: Dispatcher,
     bot: Bot,
     make_update: UpdateFactory,
@@ -272,6 +279,7 @@ async def test_show_dreams_before_deleting(
                 config.ARINA_ID, text_message=keyboards.DELETE_DREAMES,
             ),
         )
+    mock_list_content.assert_awaited_once_with(config.DREAMS_FILEPATH)
     mock_safe_send.assert_has_awaits(
         [call(config.ARINA_ID, message) for message in repr_content],
     )

@@ -1,4 +1,5 @@
-from unittest.mock import AsyncMock, call, patch
+from typing import Literal
+from unittest.mock import AsyncMock, call, MagicMock, patch
 
 import pytest
 from aiogram.types import Message
@@ -14,6 +15,64 @@ from love_bot.core.utils import (
 
 @pytest.mark.asyncio
 @patch('love_bot.core.utils.config.bot.forward_message', autospec=True)
+@patch.object(config.logger, 'exception')
+async def test_safe_send_message_unsuccessfully(
+    mock_logger: MagicMock,
+    mock_forward: AsyncMock,
+    chat_id: int,
+    text_message: str,
+    received_message_id: int,
+) -> None:
+    args = chat_id, text_message, received_message_id
+    with patch(
+        'love_bot.core.utils.config.bot.send_message', side_effect=Exception(),
+    ):
+        await safe_send_message(*args)
+    mock_logger.assert_called_once()
+    error_message = mock_logger.call_args.args[1]
+    for arg in args:
+        assert str(arg) in error_message
+    mock_forward.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('is_not_none', (None, True))
+@patch('love_bot.core.utils.config.bot.forward_message', autospec=True)
+async def test_safe_send_message_to_me(
+    mock_forward: AsyncMock,
+    message: Message,
+    text_message: str,
+    received_message_id: int,
+    is_not_none: Literal[True] | None,
+    sent_message_id: int,
+) -> None:
+    with patch(
+        'love_bot.core.utils.config.bot.send_message', return_value=message,
+    ):
+        assert (
+            await safe_send_message(
+                config.MY_ID,
+                text_message,
+                request_message_id=is_not_none and received_message_id,
+            ) == sent_message_id
+        )
+    mock_forward.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@patch('love_bot.core.utils.config.bot.send_message', autospec=True)
+async def test_escaping_markdown_symbols(mock_send: AsyncMock) -> None:
+    await safe_send_message(config.MY_ID, message='1. test!')
+    mock_send.assert_awaited_once_with(
+        config.MY_ID,
+        text='1\\. test\\!',
+        reply_markup=None,
+        parse_mode='MarkdownV2',
+    )
+
+
+@pytest.mark.asyncio
+@patch('love_bot.core.utils.config.bot.forward_message', autospec=True)
 async def test_safe_send_message_without_request_message_id(
     mock_forward: AsyncMock,
     chat_id: int,
@@ -24,9 +83,7 @@ async def test_safe_send_message_without_request_message_id(
     with patch(
         'love_bot.core.utils.config.bot.send_message', return_value=message,
     ):
-        assert (
-            await safe_send_message(chat_id, text_message) == sent_message_id
-        )
+        await safe_send_message(chat_id, text_message)
     mock_forward.assert_awaited_once_with(
         chat_id=config.MY_ID, from_chat_id=chat_id, message_id=sent_message_id,
     )
@@ -45,11 +102,7 @@ async def test_safe_send_message_with_request_message_id(
     with patch(
         'love_bot.core.utils.config.bot.send_message', return_value=message,
     ):
-        assert (
-            await safe_send_message(
-                chat_id, text_message, received_message_id,
-            ) == sent_message_id
-        )
+        await safe_send_message(chat_id, text_message, received_message_id)
     mock_forward.assert_has_awaits(
         [
             call(

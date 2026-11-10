@@ -17,8 +17,8 @@ MESSAGE_FOR_UNKNOWN_USERS = (
     'Если Вы её знаете, передайте ей привет🖐️'
 )
 
-SHOW_ARINA_ALL_LOVE_MESSAGE_RESPONSE = 'Вы делаете что-то незаконное🤔'
-DELETE_LOVE_MESSAGES_BY_ARINA_RESPONSE = (
+SHOWING_ARINA_ALL_LOVE_MESSAGE_RESPONSE = 'Вы делаете что-то незаконное🤔'
+DELETING_LOVE_MESSAGES_BY_ARINA_RESPONSE = (
     'Вы делаете что-то очень незаконное🤔🤔🤔'
 )
 
@@ -50,7 +50,7 @@ OUT_OF_RANGE_INDEXES_ERROR = (
     'Я ничево не удалив, потому што Вы ввели немношко weird номера😯😯'
 )
 
-DELETE_DREAMS_REQUEST_IS_INVALID = (
+DELETING_DREAMS_REQUEST_IS_INVALID = (
     'В данновый момент Вы находитесь в режиме удаления снов🗑️\n'
     'Проверьте правильность ввода и повторите попытку, '
     f'либо нажмите снизу на кнопочку {CANCEL}, '
@@ -70,7 +70,7 @@ DREAMS_FILE_ERROR = (
 CONTENT_IS_SAVED = 'Сохранено☺️'
 CONTENT_IS_DELETED = 'Я удалив вот это👆🤙💫'
 SUCCESSFULL_SENDING = 'Сообщение отправлено☺️'
-CANCEL_RESPONSE = 'Есть "Отмена"🫡'
+CANCELATION_RESPONSE = 'Есть "Отмена"🫡'
 SUCCESS = '✅'
 
 AFTER_DELETING_NOTIFICATION = (
