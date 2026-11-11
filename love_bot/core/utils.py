@@ -19,7 +19,7 @@ async def safe_send_message(
     Логирование исключений. Пересылка мне сообщения бота, отправленного не мне,
     а также полученного ботом сообщения при наличии соответствующего аргумента.
     Если markdown = True (по умолчанию), сообщение парсится
-    в разметке MarkdownV2; символы из списка неиспользуемых экранируются\n
+    в разметке MarkdownV2; символы из списка неиспользуемых экранируются.\n
     Возвращает id отправленного сообщения.
     """
     if markdown:
@@ -38,10 +38,7 @@ async def safe_send_message(
     )
     try:
         sent_message = await config.bot.send_message(
-            chat_id,
-            message,
-            reply_markup=keyboard,
-            parse_mode=parse_mode,
+            chat_id, message, reply_markup=keyboard, parse_mode=parse_mode,
         )
     except (TelegramNetworkError, TelegramServerError):
         config.logger.exception('%s\n\nTelegram недоступен', error_message)

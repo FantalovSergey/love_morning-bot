@@ -14,7 +14,9 @@ TZ = timezone(timedelta(hours=10), 'Asia/Vladivostok')
 
 LOGS_FILEPATH = '/data/logs.log'
 logging.Formatter.converter = lambda *_: datetime.now(TZ).timetuple()
-handler = RotatingFileHandler(LOGS_FILEPATH, maxBytes=500000, backupCount=5)
+handler = RotatingFileHandler(
+    LOGS_FILEPATH, maxBytes=500000, backupCount=5, encoding='utf-8',
+)
 handler.setFormatter(
     logging.Formatter('%(asctime)s %(levelname)s %(message)s'),
 )
@@ -62,4 +64,4 @@ CONTENT_SHOWING_PERIOD = 5 * MINUTE
 
 BACKUP_PERIOD = 5 * DAY
 
-UNUSED_MARKDOWN_SYMBOLS = '_*[]()~>#+-={}.!'
+UNUSED_MARKDOWN_SYMBOLS = '.!()-+=~*#>{}_[]'
